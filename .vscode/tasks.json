@@ -1,0 +1,27 @@
+{
+  // .vscode/tasks.json
+  // requires mpremote to be installed globally (via pipx or pip)
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Pico ▸ run main.py via mpremote",
+      "type": "shell",
+      "command": "mpremote",
+      "args": [
+        "connect", "auto",
+        "mount", "${workspaceFolder}",
+        "run", "main.py"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "echo": true
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true          // ⇧⌘B / Ctrl+Shift+B
+      },
+      "problemMatcher": []
+    }
+  ]
+}
