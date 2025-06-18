@@ -142,18 +142,41 @@ class multifunction_clock:
         elif self.editing:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET ON/OFF"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
+    # helper function to get clean station name from RDS data
+    def get_station_name(self):
+        if hasattr(self.radio, 'station_name') and self.radio.station_name:
+            return ''.join(self.radio.station_name).strip()
+        return "No Station"
+    
+    # helper function to get clean radio text (song info) from RDS data
+    def get_radio_text(self):
+        if hasattr(self.radio, 'radio_text') and self.radio.radio_text:
+            text = ''.join(self.radio.radio_text).strip()
+            return text if text else "No Song Info"
+        return "No Song Info"
+    
     # draw the radio UI
     def draw_radio_mode(self):
         #self.update_radio(mute=False) #debug the issue where i2c bus is busy, this is a workaround.
 
+        # Update RDS data every screen refresh for current song info
+        self.radio.update_rds()
+        
         self.display.text("RADIO", 0, 0)
         self.display.text(f"FM {self.radio_frequency:.1f}", 0, self.line_spacing * 2)
         self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 3)
-        #self.display.text("Not Implemented", 0, 45)
+        
+        # Display song/program information from RDS
+        song_info = self.get_radio_text()
+        print(f"Radio Text: {song_info}")  # Debug print to console
+        # Truncate if too long for display
+        if len(song_info) > 20:
+            song_info = song_info[:17] + "..."
+        self.display.text(song_info, 0, self.line_spacing * 4)
         
         if self.editing:
             edit_labels = ["SET FREQ", "SET VOLUME"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5) # moved down one line
     
     # parent handler for button presses
     def handle_buttons(self, button_type):
