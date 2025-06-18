@@ -13,13 +13,11 @@ class multifunction_clock:
         self.radio_volume = 0 # default volume level
         # configure radio module
         self.radio = rda5807.Radio(radio_i2c)
-
         self.radio.set_volume(self.radio_volume)
         self.radio.set_frequency_MHz(self.radio_frequency)
         self.radio.mute(True)
-        
+        # other vars for the clock/alarm/radio
         self.line_spacing = 10 # Line spacing for text display (px)
-        
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
         self.alarm_hour = 7 # default alarm hour. bright and early
         self.alarm_minute = 0
@@ -32,10 +30,9 @@ class multifunction_clock:
         self.led_state = False
         self.original_alarm_hour = 7 # when unsnoozed, the alarm will return to this time
         self.original_alarm_minute = 0 # when unsnoozed, the alarm will return to this time
-        
+        # LED and timers for alarm indication
         self.led = Pin("LED", Pin.OUT) # onboard LED for alarm indication
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
-        
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
     # helper function to format time strings
@@ -81,8 +78,7 @@ class multifunction_clock:
                 self.radio_volume = max(0, min(15, self.radio_volume + delta)) # enforce volume limits 0-15
             # Update the radio settings
             self.update_radio(mute=False, freq=None, vol=self.radio_volume)
-            self.radio_status()
-                
+            self.radio_status()   
     #radio wrappers
     def update_radio(self, mute=None, freq=None, vol=None):
         if mute is not None:
@@ -91,7 +87,6 @@ class multifunction_clock:
             self.radio.set_frequency_MHz(freq)
         if vol is not None:
             self.radio.set_volume(vol)
-
     def radio_status(self):
         vol = self.radio.get_volume()
         self.radio_volume = vol  # update the instance variable
@@ -99,9 +94,7 @@ class multifunction_clock:
         self.radio_frequency = freq  # update the instance variable
         mute = self.radio.mute_flag
         mono = self.radio.mono_flag
-        self.radio.update_rds()
         print(f"Radio: Mute={mute}, Vol={vol}, Freq={freq}, Mono={mono}")
-        #print(f"RDS: {self.radio.radio_text}, {self.radio.station_name}")
         #print(f"Signal: {self.radio.radio_text()}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
@@ -116,20 +109,17 @@ class multifunction_clock:
         self.display.show() # display the buffered content on the OLED. shout at the SPI bus! (now its sad :( you are a bad person)
     # draw the time UI
     def draw_time_mode(self):
-        #self.update_radio(mute=True) #debug the issue where i2c bus is busy, this is a workaround.
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
-        
         self.display.text("TIME", 0, 0)
         self.display.text(self.format_time(hour, minute, second), 0, self.line_spacing * 2)
         self.display.text(f"{month:02d}/{day:02d}/{year}", 0, self.line_spacing * 3)
         self.display.text("24H" if self.format_24h else "12H", 100, 0)
-        
+    
         if self.editing:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET FORMAT"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
     # draw the alarm UI
     def draw_alarm_mode(self):
-        #self.update_radio(mute=True) #debug the issue where i2c bus is busy, this is a workaround.
         self.display.text("ALARM", 0, 0)
         self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 2)
         self.display.text("Status: " + ("ON" if self.alarm_enabled else "OFF"), 0, self.line_spacing * 3)
@@ -142,41 +132,14 @@ class multifunction_clock:
         elif self.editing:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET ON/OFF"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
-    # helper function to get clean station name from RDS data
-    def get_station_name(self):
-        if hasattr(self.radio, 'station_name') and self.radio.station_name:
-            return ''.join(self.radio.station_name).strip()
-        return "No Station"
-    
-    # helper function to get clean radio text (song info) from RDS data
-    def get_radio_text(self):
-        if hasattr(self.radio, 'radio_text') and self.radio.radio_text:
-            text = ''.join(self.radio.radio_text).strip()
-            return text if text else "No Song Info"
-        return "No Song Info"
-    
     # draw the radio UI
     def draw_radio_mode(self):
-        #self.update_radio(mute=False) #debug the issue where i2c bus is busy, this is a workaround.
-
-        # Update RDS data every screen refresh for current song info
-        self.radio.update_rds()
-        
         self.display.text("RADIO", 0, 0)
         self.display.text(f"FM {self.radio_frequency:.1f}", 0, self.line_spacing * 2)
         self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 3)
-        
-        # Display song/program information from RDS
-        song_info = self.get_radio_text()
-        print(f"Radio Text: {song_info}")  # Debug print to console
-        # Truncate if too long for display
-        if len(song_info) > 20:
-            song_info = song_info[:17] + "..."
-        self.display.text(song_info, 0, self.line_spacing * 4)
-        
         if self.editing:
             edit_labels = ["SET FREQ", "SET VOLUME"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5) # moved down one line
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
     
     # parent handler for button presses
     def handle_buttons(self, button_type):
@@ -186,7 +149,6 @@ class multifunction_clock:
             "mode": self.button_mode,
             "set": self.button_set
         }
-        
         if button_type in handlers:
             handlers[button_type]()
             self.tick_update_disp()
@@ -203,7 +165,6 @@ class multifunction_clock:
         if self.alarm_triggered or self.snooze_active:
             self.reset_alarm()
             return
-            
         if self.editing:
             max_fields = {"TIME": 3, "ALARM": 3, "RADIO": 2} # editable fields per mode time: format, hr, min. alarm: hr, min, on/off. radio: freq, vol. 
             self.edit_field = (self.edit_field + 1) % max_fields.get(self.mode, 2)
@@ -212,7 +173,6 @@ class multifunction_clock:
             current_index = modes.index(self.mode)
             old_mode = self.mode # save the old mode before changing, so we can handle radio mute state correctly
             self.mode = modes[(current_index + 1) % len(modes)]
-            
             # mute radio when leaving radio mode, unmute when entering
             if old_mode == "RADIO" and self.mode != "RADIO":
                 self.update_radio(mute=True)

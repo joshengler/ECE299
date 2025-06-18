@@ -359,16 +359,16 @@ class Radio:
                     self.radio_text = self.radio_text_buffer
                 self.last_offset = offset
                 
-            #elif group_type == 4 and group_version == 0:
-            #    hours_utc = ((c & 1) << 4) | ((d & 0xf000) >> 12)
-            #    minutes = ((d & 0xfc0) >> 6)
-            #    utc_offset = (d & 0x1f) * 0.25
-            #    utc_sign = d & 0x20
+            elif group_type == 4 and group_version == 0:
+                hours_utc = ((c & 1) << 4) | ((d & 0xf000) >> 12)
+                minutes = ((d & 0xfc0) >> 6)
+                utc_offset = (d & 0x1f) * 0.25
+                utc_sign = d & 0x20
                 
-            #    if utc_sign:
-            #        hours = hours_utc + utc_offset
-            #    else:
-            #        hours = hours_utc - utc_offset
+                if utc_sign:
+                    hours = hours_utc + utc_offset
+                else:
+                    hours = hours_utc - utc_offset
             #    try:
             #        self.rtc.datetime((2000, 1, 1, 1, int(hours), int(minutes), 0, 0))
             #    except OSError:
