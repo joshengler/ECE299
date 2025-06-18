@@ -36,8 +36,8 @@ class multifunction_clock:
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
         # separate timer to poll RDS continuously
-        self.rds_timer = Timer()
-        self.rds_timer.init(period=25, mode=Timer.PERIODIC, callback=self.radio.update_rds)
+        #self.rds_timer = Timer()
+        #self.rds_timer.init(period=1000, mode=Timer.PERIODIC, callback=self.radio.update_rds)
     # helper function to format time strings
     def format_time(self, hour, minute, second=None):
         if self.format_24h:
@@ -97,7 +97,6 @@ class multifunction_clock:
         self.radio_frequency = freq  # update the instance variable
         mute = self.radio.mute_flag
         mono = self.radio.mono_flag
-        #print(f"Radio: Mute={mute}, Vol={vol}, Freq={freq}, Mono={mono}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
@@ -147,14 +146,14 @@ class multifunction_clock:
         self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 1)
 
         # show RDS station name and radio text
-        ps = self.get_station_name() or "No PS"
-        rt = self.get_radio_text()    or "No RT"
-        self.display.text(ps, 0, self.line_spacing * 2)
+        #sn = self.get_station_name() or "No Station Name"
+        #rt = self.get_radio_text()    or "No Radio Text"
+        #self.display.text(sn, 0, self.line_spacing * 2)
         # split RT into two lines of max 14 chars, if we have more, we are cooked. it gets truncated.
-        rt1 = rt[:14]
-        rt2 = rt[14:28] if len(rt) > 14 else ""
-        self.display.text(rt1, 0, self.line_spacing * 3)
-        self.display.text(rt2, 0, self.line_spacing * 4)
+        #rt1 = rt[:14]
+        #rt2 = rt[14:28] if len(rt) > 14 else ""
+        #self.display.text(rt1, 0, self.line_spacing * 3)
+        #self.display.text(rt2, 0, self.line_spacing * 4)
 
         if self.editing:
             edit_labels = ["SET FREQ", "SET VOLUME"]
