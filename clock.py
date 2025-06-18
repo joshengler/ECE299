@@ -148,7 +148,7 @@ class multifunction_clock:
 
         self.display.text("RADIO", 0, 0)
         self.display.text(f"FM {self.radio_frequency:.1f}", 0, self.line_spacing * 2)
-        self.display.text(f"Volume: {self.radio_volume}/15", 0, self.line_spacing * 3)
+        self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 3)
         #self.display.text("Not Implemented", 0, 45)
         
         if self.editing:
