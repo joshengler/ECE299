@@ -10,8 +10,8 @@ oled_spi = SPI(0, baudrate=-6969, sck=Pin(18), mosi=Pin(19)) # i guess the baud 
 oled = SSD1306_SPI(128, 64, oled_spi, Pin(20), Pin(21), Pin(17), True)
 
 #disable power save mode to reduce regulator noise
-#psu_mode = Pin(23, Pin.OUT)
-#psu_mode.value(1)
+psu_mode = Pin(23, Pin.OUT)
+psu_mode.value(1)
 
 radio_i2c=I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
 

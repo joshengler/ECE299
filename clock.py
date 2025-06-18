@@ -35,6 +35,9 @@ class multifunction_clock:
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
+        # separate timer to poll RDS continuously
+        self.rds_timer = Timer()
+        self.rds_timer.init(period=25, mode=Timer.PERIODIC, callback=self.radio.update_rds)
     # helper function to format time strings
     def format_time(self, hour, minute, second=None):
         if self.format_24h:
@@ -94,8 +97,7 @@ class multifunction_clock:
         self.radio_frequency = freq  # update the instance variable
         mute = self.radio.mute_flag
         mono = self.radio.mono_flag
-        print(f"Radio: Mute={mute}, Vol={vol}, Freq={freq}, Mono={mono}")
-        #print(f"Signal: {self.radio.radio_text()}")
+        #print(f"Radio: Mute={mute}, Vol={vol}, Freq={freq}, Mono={mono}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
@@ -131,15 +133,32 @@ class multifunction_clock:
             self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 4)
         elif self.editing:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET ON/OFF"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) #
+    def get_station_name(self):
+        return ''.join(self.radio.station_name).strip()
+
+    # helper to read RadioText
+    def get_radio_text(self):
+        return ''.join(self.radio.radio_text).strip()
+
     # draw the radio UI
     def draw_radio_mode(self):
-        self.display.text("RADIO", 0, 0)
-        self.display.text(f"FM {self.radio_frequency:.1f}", 0, self.line_spacing * 2)
-        self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 3)
+        self.display.text(f"RADIO FM {self.radio_frequency:.1f}", 0, 0)
+        self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 1)
+
+        # show RDS station name and radio text
+        ps = self.get_station_name() or "No PS"
+        rt = self.get_radio_text()    or "No RT"
+        self.display.text(ps, 0, self.line_spacing * 2)
+        # split RT into two lines of max 14 chars, if we have more, we are cooked. it gets truncated.
+        rt1 = rt[:14]
+        rt2 = rt[14:28] if len(rt) > 14 else ""
+        self.display.text(rt1, 0, self.line_spacing * 3)
+        self.display.text(rt2, 0, self.line_spacing * 4)
+
         if self.editing:
             edit_labels = ["SET FREQ", "SET VOLUME"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5)
     
     # parent handler for button presses
     def handle_buttons(self, button_type):

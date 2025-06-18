@@ -282,7 +282,7 @@ class Radio:
 
         return self.read_reg(RDA5807M_REG_RDSA), self.read_reg(RDA5807M_REG_RDSB), self.read_reg(RDA5807M_REG_RDSC), self.read_reg(RDA5807M_REG_RDSD)
     
-    def update_rds(self):
+    def update_rds(self, timer=None):
         
         """ Check for new RDS messages and decode if present
 
