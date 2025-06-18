@@ -1,15 +1,28 @@
 from machine import RTC, Timer, Pin
-from fm_radio import Radio
+import time, sys
+import rda5807
 class multifunction_clock:
     # init everything under the sun
-    def __init__(self, display, x=0, y=0):
+    def __init__(self, display, radio_i2c, x=0, y=0):
         self.display = display
         self.x = x # where to draw the clock on the display
         self.y = y # where to draw the clock on the display
         self.rtc = RTC() # initialize the RTC
-        self.mode = "TIME" # start in time mode.
-        # we setup the radio below, but not implemented yet.
-        self.radio = Radio(101.9, 5, True) # initialize the radio with default frequency and volume
+        self.mode = "TIME" # start in time mode
+
+        self.radio_frequency = 101.9 # default FM frequency
+        self.radio_volume = 5 # default volume level
+        # configure radio module
+        self.radio = rda5807.Radio(radio_i2c)
+        time.sleep_ms(1000)
+
+        self.radio.set_volume(self.radio_volume)
+        self.radio.set_frequency_MHz(self.radio_frequency)
+        self.radio.mute(True)
+        
+        
+        
+        
         
         # Line spacing for text display
         self.line_spacing = 10
@@ -29,8 +42,11 @@ class multifunction_clock:
 
         # im not going to implement the radio rn because i dont have hw to test.
         # get rid of these when we actually implement the radio. 
-        self.radio_frequency = 101.9 # default FM frequency
-        self.radio_volume = 5 # default volume level
+
+        
+        # Rate limiting for radio updates
+        self.last_radio_update = 0  # timestamp of last radio update
+        self.radio_update_interval = 1000  # minimum milliseconds between updates
         
         self.led = Pin("LED", Pin.OUT) # onboard LED for alarm indication
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
@@ -72,32 +88,30 @@ class multifunction_clock:
             if field == 0:  # frequency
                 self.radio_frequency = max(88.0, min(108.0, self.radio_frequency + delta * 0.1))
             elif field == 1:  # volume
-                self.radio_volume = max(0, min(15, self.radio_volume + delta))
+                self.radio_volume = max(0, min(15, self.radio_volume + delta)) # enforce volume limits 0-15
+            # Update the radio settings
+            self.update_radio(mute=False, freq=self.radio_frequency, vol=self.radio_volume)
+            self.radio_status()
                 
     #radio wrappers
-    def mute_radio(self, state):
-        self.radio.SetMute(state)
-        #self.radio.UpdateSettings()
-        self.radio.ProgramRadio()
-    def freq_radio(self, freq):
-        self.radio.SetFrequency(freq)
-        #self.radio.UpdateSettings()
-        self.radio.ProgramRadio()
-    def vol_radio(self, vol):
-        self.radio.SetVolume(vol)
-        #self.radio.UpdateSettings()
-        self.radio.ProgramRadio()
+    def update_radio(self, mute=None, freq=None, vol=None):
+        if mute is not None:
+            self.radio.mute(mute)
+        if freq is not None:
+            self.radio.set_frequency_MHz(freq)
+        if vol is not None:
+            self.radio.set_volume(vol)
 
-
+    def radio_status(self):
+        vol = self.radio.get_volume()
+        freq = self.radio.get_frequency_MHz()
+        mute = self.radio.mute_flag
+        mono = self.radio.mono_flag
+        print(f"Radio: Mute={mute}, Vol={vol}, Freq={freq}, Mono={mono}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
         self.display.fill(0) # clear buffer
-        
-        
-        #debug
-        print(self.radio.GetSettings())
-        
         mode_handlers = { # python moment.
             "TIME": self.draw_time_mode,
             "ALARM": self.draw_alarm_mode,
@@ -107,7 +121,7 @@ class multifunction_clock:
         self.display.show() # display the buffered content on the OLED. shout at the SPI bus! (now its sad :( you are a bad person)
     # draw the time UI
     def draw_time_mode(self):
-        self.mute_radio(True)
+        #self.update_radio(mute=True) #debug the issue where i2c bus is busy, this is a workaround.
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
         
         self.display.text("TIME", 0, 0)
@@ -120,7 +134,7 @@ class multifunction_clock:
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
     # draw the alarm UI
     def draw_alarm_mode(self):
-        self.mute_radio(True)
+        #self.update_radio(mute=True) #debug the issue where i2c bus is busy, this is a workaround.
         self.display.text("ALARM", 0, 0)
         self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 2)
         self.display.text("Status: " + ("ON" if self.alarm_enabled else "OFF"), 0, self.line_spacing * 3)
@@ -135,9 +149,8 @@ class multifunction_clock:
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
     # draw the radio UI
     def draw_radio_mode(self):
-        self.mute_radio(False)
-        self.vol_radio(self.radio_volume)
-        self.freq_radio(self.radio_frequency)
+        #self.update_radio(mute=False) #debug the issue where i2c bus is busy, this is a workaround.
+
         self.display.text("RADIO", 0, 0)
         self.display.text(f"FM {self.radio_frequency:.1f}", 0, self.line_spacing * 2)
         self.display.text(f"Volume: {self.radio_volume}/15", 0, self.line_spacing * 3)
@@ -162,11 +175,11 @@ class multifunction_clock:
     # child handler for up button -> increases value
     def button_up(self):
         if self.editing and self.mode in ["TIME", "ALARM", "RADIO"]:
-            self.adjust_value(self.edit_field, 1)
+            self.adjust_value(self.edit_field, 1) # increase value
     # child handler for down button -> decreases value
     def button_down(self):
         if self.editing and self.mode in ["TIME", "ALARM", "RADIO"]:
-            self.adjust_value(self.edit_field, -1)
+            self.adjust_value(self.edit_field, -1) # decrease value
     # child handler for mode button -> toggles between modes or toggles field in editing mode
     def button_mode(self): # if we are in alarm or snooze mode, reset the alarm when we push the mode button. 
         if self.alarm_triggered or self.snooze_active:
@@ -174,7 +187,7 @@ class multifunction_clock:
             return
             
         if self.editing:
-            max_fields = {"TIME": 3, "ALARM": 3, "RADIO": 2}
+            max_fields = {"TIME": 3, "ALARM": 3, "RADIO": 2} # editable fields per mode time: format, hr, min. alarm: hr, min, on/off. radio: freq, vol. 
             self.edit_field = (self.edit_field + 1) % max_fields.get(self.mode, 2)
         else:
             modes = ["TIME", "ALARM", "RADIO"]
@@ -207,8 +220,8 @@ class multifunction_clock:
         self.snooze_active = True
         self.stop_alarm_blink()
         
-        snooze_minutes = max(1, 10 // self.snooze_count)
-        total_minutes = self.alarm_hour * 60 + self.alarm_minute + snooze_minutes
+        snooze_minutes = max(1, 10 // self.snooze_count) # snooze for 10, 5, 3, 2... minutes depending on snooze count
+        total_minutes = self.alarm_hour * 60 + self.alarm_minute + snooze_minutes 
         self.alarm_hour = (total_minutes // 60) % 24
         self.alarm_minute = total_minutes % 60
     
