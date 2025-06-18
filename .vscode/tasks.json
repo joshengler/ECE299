@@ -1,6 +1,13 @@
 {
   // .vscode/tasks.json
   // requires mpremote to be installed globally (via pipx or pip)
+  // also requires you add the following keybinding to your keybindings.json
+  // {
+  //  "key": "ctrl+r",
+  //  "command": "workbench.action.tasks.runTask",
+  //  "args": "Pico ▸ run main.py via mpremote",
+  //  "when": "terminalFocus"
+  //}
   "version": "2.0.0",
   "tasks": [
     {
@@ -9,17 +16,14 @@
       "command": "mpremote",
       "args": [
         "connect", "auto",
-        "mount", "${workspaceFolder}",
-        "run", "main.py"
+        "mount", ".",
+        "run", "main.py",
+        "repl"
       ],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
         "echo": true
-      },
-      "group": {
-        "kind": "test",
-        "isDefault": true          // ⇧⌘B / Ctrl+Shift+B
       },
       "problemMatcher": []
     }
