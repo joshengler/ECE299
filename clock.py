@@ -9,23 +9,16 @@ class multifunction_clock:
         self.y = y # where to draw the clock on the display
         self.rtc = RTC() # initialize the RTC
         self.mode = "TIME" # start in time mode
-
         self.radio_frequency = 101.9 # default FM frequency
-        self.radio_volume = 5 # default volume level
+        self.radio_volume = 0 # default volume level
         # configure radio module
         self.radio = rda5807.Radio(radio_i2c)
-        time.sleep_ms(1000)
 
         self.radio.set_volume(self.radio_volume)
         self.radio.set_frequency_MHz(self.radio_frequency)
         self.radio.mute(True)
         
-        
-        
-        
-        
-        # Line spacing for text display
-        self.line_spacing = 10
+        self.line_spacing = 10 # Line spacing for text display (px)
         
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
         self.alarm_hour = 7 # default alarm hour. bright and early
@@ -39,14 +32,6 @@ class multifunction_clock:
         self.led_state = False
         self.original_alarm_hour = 7 # when unsnoozed, the alarm will return to this time
         self.original_alarm_minute = 0 # when unsnoozed, the alarm will return to this time
-
-        # im not going to implement the radio rn because i dont have hw to test.
-        # get rid of these when we actually implement the radio. 
-
-        
-        # Rate limiting for radio updates
-        self.last_radio_update = 0  # timestamp of last radio update
-        self.radio_update_interval = 1000  # minimum milliseconds between updates
         
         self.led = Pin("LED", Pin.OUT) # onboard LED for alarm indication
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
@@ -86,11 +71,16 @@ class multifunction_clock:
                 self.alarm_enabled = not self.alarm_enabled
         elif self.mode == "RADIO":
             if field == 0:  # frequency
-                self.radio_frequency = max(88.0, min(108.0, self.radio_frequency + delta * 0.1))
+                # frequency manual stepping
+                #self.radio_frequency = max(88.0, min(108.0, self.radio_frequency + delta * 0.1))
+                if delta > 0: # frequency seeking
+                    self.radio.seek_up()
+                else:
+                    self.radio.seek_down()
             elif field == 1:  # volume
                 self.radio_volume = max(0, min(15, self.radio_volume + delta)) # enforce volume limits 0-15
             # Update the radio settings
-            self.update_radio(mute=False, freq=self.radio_frequency, vol=self.radio_volume)
+            self.update_radio(mute=False, freq=None, vol=self.radio_volume)
             self.radio_status()
                 
     #radio wrappers
@@ -104,10 +94,15 @@ class multifunction_clock:
 
     def radio_status(self):
         vol = self.radio.get_volume()
+        self.radio_volume = vol  # update the instance variable
         freq = self.radio.get_frequency_MHz()
+        self.radio_frequency = freq  # update the instance variable
         mute = self.radio.mute_flag
         mono = self.radio.mono_flag
+        self.radio.update_rds()
         print(f"Radio: Mute={mute}, Vol={vol}, Freq={freq}, Mono={mono}")
+        #print(f"RDS: {self.radio.radio_text}, {self.radio.station_name}")
+        #print(f"Signal: {self.radio.radio_text()}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
@@ -192,7 +187,14 @@ class multifunction_clock:
         else:
             modes = ["TIME", "ALARM", "RADIO"]
             current_index = modes.index(self.mode)
+            old_mode = self.mode # save the old mode before changing, so we can handle radio mute state correctly
             self.mode = modes[(current_index + 1) % len(modes)]
+            
+            # mute radio when leaving radio mode, unmute when entering
+            if old_mode == "RADIO" and self.mode != "RADIO":
+                self.update_radio(mute=True)
+            elif old_mode != "RADIO" and self.mode == "RADIO":
+                self.update_radio(mute=False)
     # child handler for set button -> toggles editing or snoozes alarm
     def button_set(self): #if the alarm is triggered, snooze it.
         if self.alarm_triggered:
