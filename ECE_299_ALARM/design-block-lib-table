@@ -1,0 +1,4 @@
+(design_block_lib_table
+  (version 7)
+  (lib (name "ECE.3D")(type "KiCad")(uri "${KIPRJMOD}/lib/ECE299/ECE.3D")(options "")(descr ""))
+)

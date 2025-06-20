@@ -26,6 +26,22 @@
         "echo": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Pico ▸ upload all .py via mpremote",
+      "type": "shell",
+      "command": "mpremote",
+      "args": [
+        "connect", "auto",
+        "fs", "put",
+        "*.py", ":"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "echo": true
+      },
+      "problemMatcher": []
     }
   ]
 }

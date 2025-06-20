@@ -13,8 +13,9 @@
 #
 # License: MIT
 #
-
+import time
 random_access_address = 17
+
 
 #Register addresses
 RDA5807M_REG_CHIPID = 0x00
@@ -107,8 +108,8 @@ class Radio:
         
         #read chip ID and check
         data = self.read_reg(RDA5807M_REG_CHIPID)
-        if(data>>8 == 0x58):
-            print("Radio Found!")
+        if (data >> 8 != 0x58):
+            print("Radio not found!")
         
         #configure radio
         flags = RDA5807M_FLG_DHIZ | RDA5807M_FLG_BASS | RDA5807M_FLG_ENABLE | RDA5807M_FLG_NEW | RDA5807M_FLG_SEEKUP | RDA5807M_FLG_RDS
@@ -117,7 +118,7 @@ class Radio:
         self.write_reg(RDA5807M_REG_GPIO, 0x1a00)
         self.write_reg(RDA5807M_REG_VOLUME, 0x880f)
         self.write_reg(RDA5807M_REG_I2S, 0x0000)
-        self.write_reg(RDA5807M_REG_BLEND, 0x4202)
+        self.write_reg(RDA5807M_REG_BLEND, 0x4202) #0x4202 = 0b0100001000000010, soft blend enabled, frequency mode enabled
         
         self.write_reg(RDA5807M_REG_CONFIG, flags)
         
@@ -143,8 +144,9 @@ class Radio:
             self.spacing = 2
         elif frequency_spacing_kHz == 25:
             self.spacing = 3
-            
-        self.write_reg(RDA5807M_REG_TUNING, 0x10 | (self.band << 2) | self.spacing)
+        # idk why this is here, but it breaks the initial tune. 
+        # self.write_reg(RDA5807M_REG_TUNING, 0x10 | (self.band << 2) | self.spacing) 
+        
         self.clear_rds_data()
         
     def clear_rds_data(self):
@@ -230,7 +232,6 @@ class Radio:
     def seek_up(self):
 
         """ Find next station (blocks until tuning completes) """
-
         self.clear_rds_data()
         self.update_reg(RDA5807M_REG_CONFIG,
             (RDA5807M_FLG_SEEKUP | RDA5807M_FLG_SEEK), 
@@ -273,7 +274,8 @@ class Radio:
 
         """ Recieved Signal Strength Indicator 0 = low, 7 = high (logarithmic)"""
 
-        rssi = round(7*(self.read_reg(RDA5807M_REG_RSSI) >> 9)/127)
+        #rssi = round(7*(self.read_reg(RDA5807M_REG_RSSI) >> 9)/127)
+        rssi = (self.read_reg(RDA5807M_REG_RSSI) >> 9)
         return rssi
     
     def get_rds_block_group(self):
@@ -369,9 +371,10 @@ class Radio:
                     hours = hours_utc + utc_offset
                 else:
                     hours = hours_utc - utc_offset
-            #    try:
-            #        self.rtc.datetime((2000, 1, 1, 1, int(hours), int(minutes), 0, 0))
-            #    except OSError:
-            #        pass
+                try:
+                    #self.rtc.datetime((2000, 1, 1, 1, int(hours), int(minutes), 0, 0))
+                    print("Got time: {:02d}:{:02d}".format(int(hours), int(minutes)))
+                except OSError:
+                    pass
                 
         return True
