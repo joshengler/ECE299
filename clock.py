@@ -3,7 +3,7 @@ import time, sys
 import rda5807
 class multifunction_clock:
     # init everything under the sun
-    def __init__(self, display, radio_i2c, x=0, y=0):
+    def __init__(self, display, x=0, y=0):
         self.display = display
         self.x = x # where to draw the clock on the display
         self.y = y # where to draw the clock on the display
@@ -12,10 +12,10 @@ class multifunction_clock:
         self.radio_frequency = 101.9 # default FM frequency
         self.radio_volume = 0 # default volume level
         # configure radio module
-        self.radio = rda5807.Radio(radio_i2c)
-        self.radio.set_volume(self.radio_volume)
-        self.radio.set_frequency_MHz(self.radio_frequency)
-        self.radio.mute(True)
+#         self.radio = rda5807.Radio(radio_i2c)
+#         self.radio.set_volume(self.radio_volume)
+#         self.radio.set_frequency_MHz(self.radio_frequency)
+#         self.radio.mute(True)
         # other vars for the clock/alarm/radio
         self.line_spacing = 10 # Line spacing for text display (px)
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
@@ -27,6 +27,7 @@ class multifunction_clock:
         self.snooze_active = False # start with snooze not active (what would we be snoozing?)
         self.alarm_enabled = False # start with alarm disabled (we dont want to wake up at 7am on a weekend)
         self.format_24h = True # default to 24-hour format, its better
+        self.am_pm = "AM" # AM by default
         self.led_state = False
         self.original_alarm_hour = 7 # when unsnoozed, the alarm will return to this time
         self.original_alarm_minute = 0 # when unsnoozed, the alarm will return to this time
@@ -45,11 +46,19 @@ class multifunction_clock:
                 return f"{hour:02d}:{minute:02d}:{second:02d}"
             return f"{hour:02d}:{minute:02d}"
         else:
-            am_pm = "AM" if hour < 12 else "PM"
+            self.am_pm = "AM" if hour < 12 else "PM"
             display_hour = hour % 12 or 12
             if second is not None:
-                return f"{display_hour:02d}:{minute:02d}:{second:02d} {am_pm}"
-            return f"{display_hour:02d}:{minute:02d} {am_pm}"
+                return f"{display_hour:02d}:{minute:02d}:{second:02d} {self.am_pm}"
+            return f"{display_hour:02d}:{minute:02d} {self.am_pm}"
+        
+    # return current time to display on web app
+    def get_time(self):
+    
+        years, months, days, weekdays, hours, minutes, seconds, subseconds = self.rtc.datetime()
+    
+        return "{:02d}:{:02d}:{:02d}".format(hours, minutes, seconds)
+
     # helper function to enforce value limits on time, alarm, and radio settings
     def adjust_value(self, field, delta):
         if self.mode == "TIME":
@@ -251,3 +260,4 @@ class multifunction_clock:
                 
                 self.alarm_triggered = True
                 self.start_alarm_blink()
+
