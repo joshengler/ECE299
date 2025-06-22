@@ -54,3 +54,12 @@
 .subview.active{
     display:block;
 }
+
+/* time display format */
+#time {
+    font-size: 60pt; /* or use 64px, 5em, etc. */
+    font-weight: bold;
+    text-align: center;
+    display: block;
+    margin-top: 20px;
+}
