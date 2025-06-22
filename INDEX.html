@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <!-- Javascript and CSS files go here.-->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale = 1">
+        <title>Settings</title>
+        <link rel="stylesheet" href="style.css">
+        <script>
+            const is24hr = {format_24h};
+        </script>
+        <script src="main.js" defer></script>
+    </head>
+    <body>
+        <div class = "btn_container">
+
+            <button class= "btn_settings" onclick="switchMainView('clock')">Clock</button>
+            <button class= "btn_settings" onclick="switchMainView('radio')">Radio</button>
+            <button class= "btn_settings" onclick="switchMainView('alarm')">Alarm</button>
+        </div>
+
+        <!-- Views -->
+        <div id="clock" class="view active">
+            <div class = "clock_container">
+                current time: <span id ="time">{time}</span>
+            </div>
+            <div class = "clock_container">
+                        Set Pico Time
+                <div id="24hView" class = "subview">
+                    <form action="/set_time" method="get">
+                        <input type="number" name="h" placeholder="Hour" min="0" max="24" required>
+                        <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
+                        <input type="number" name="s" placeholder="Second" min="0" max="59" required>
+                        <input type="hidden" name="format" value="24">
+                        <input type="submit" value="Set Time">
+                    </form>
+                </div>
+                <div id = "12hView" class = "subview">
+                    <form action="/set_time" method="get">
+                        <input type="number" name="h" placeholder="Hour" min="0" max="12" required>
+                        <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
+                        <input type="number" name="s" placeholder="Second" min="0" max="59" required>
+                        <input type="hidden" name="format" value="12">
+
+                        <select name="am_pm" required>
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+
+                        <input type="submit" value="Set Time">
+                    </form>
+                </div>
+            </div>
+            
+            <div class = "clock_container">
+                    <input type = "checkbox" id = "24hr_toggle" onchange="toggle24h()" {checked}/>
+                    <label for="24hr">Toggle 24 Hour Time</label>
+            </div>
+        </div>
+
+        <div id="radio" class="view">
+        <h2>Settings</h2>
+        <p>Change your preferences here.</p>
+        </div>
+
+        <div id="alarm" class="view">
+        <h2>About</h2>
+        <p>This is an example site.</p>
+        </div>
+
+    </body>
+
+
+</html>
+
+
