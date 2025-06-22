@@ -41,7 +41,7 @@ def connect():
 def serve_file(path, mutlifunction_clock):
     if path == "/" or path == "/on?" or path == "/off?":
         path = "/INDEX.html"
-        with open("INDEX.html", "r") as file:
+        with open("web/INDEX.html", "r") as file:
             html = file.read()
         if state is not None:
             html = html.format(
@@ -52,7 +52,7 @@ def serve_file(path, mutlifunction_clock):
         return html, "text/html"
     else:
         try:
-            with open(path[1:], "r") as file:  # remove leading /
+            with open("web/" + path[1:], "r") as file:  # remove leading /
                 content = file.read()
             if path.endswith(".css"):
                 return content, "text/css"
@@ -132,30 +132,41 @@ def start_web_app(mutlifunction_clock):
                 
             if path.startswith("/set_time"):
                 handle_set_time(path, mutlifunction_clock)
-                path = "/"  # reload homepage with updated time
+                
+                # redirect to homepage and clear URL
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /\r\n")
+                client.send("\r\n")
+                client.close()
+                
             elif path.startswith("/set_format?format=24"):
                 mutlifunction_clock.format_24h = True
-                path = "/"
+                
+                # redirect to homepage and clear URL
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /\r\n")
+                client.send("\r\n")
+                client.close()
+                
             elif path.startswith("/set_format"):
                 mutlifunction_clock.format_24h = False
-                path = "/"
-            
-            if request == "/on?":
-                led.value(1)
-                state = "ON"
                 
-            elif request == "/off?":
-                led.value(0)
-                state = "OFF"
-
-            response_body, content_type = serve_file(path, mutlifunction_clock)
-            client.send("HTTP/1.1 200 OK\r\n")
-            client.send("Content-Type: {}\r\n\r\n".format(content_type))
-            client.sendall(response_body.encode("utf-8"))
-            client.close()
+                # redirect to homepage and clear URL
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /\r\n")
+                client.send("\r\n")
+                client.close()
+                
+            else:
+                response_body, content_type = serve_file(path, mutlifunction_clock)
+                client.send("HTTP/1.1 200 OK\r\n")
+                client.send("Content-Type: {}\r\n\r\n".format(content_type))
+                client.sendall(response_body.encode("utf-8"))
+                client.close()
             
         
     except OSError as e:
         print("error: connection terminated")
         client.close()
+
 
