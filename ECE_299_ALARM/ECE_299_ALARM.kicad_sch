@@ -2760,6 +2760,12 @@
 		(uuid "04c2f801-d2bb-4a3b-8d6f-5f7f6c20500e")
 	)
 	(junction
+		(at 114.3 100.33)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "29a26d1b-0f93-4dee-a1da-84f71f5a2402")
+	)
+	(junction
 		(at 163.83 53.34)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2770,6 +2776,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "8bd54ad4-a3aa-4128-90a0-45c5df8381d6")
+	)
+	(junction
+		(at 121.92 102.87)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c0f4331b-359d-401e-b2a1-429f0ff0ea2f")
 	)
 	(no_connect
 		(at 73.66 110.49)
@@ -2961,6 +2973,16 @@
 	)
 	(wire
 		(pts
+			(xy 114.3 100.33) (xy 128.27 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0e05fcd2-1b51-4461-ac1e-3de49bb1d730")
+	)
+	(wire
+		(pts
 			(xy 262.89 104.14) (xy 262.89 107.95)
 		)
 		(stroke
@@ -3041,7 +3063,7 @@
 	)
 	(wire
 		(pts
-			(xy 109.22 102.87) (xy 132.08 102.87)
+			(xy 109.22 102.87) (xy 121.92 102.87)
 		)
 		(stroke
 			(width 0)
@@ -3051,7 +3073,7 @@
 	)
 	(wire
 		(pts
-			(xy 109.22 100.33) (xy 128.27 100.33)
+			(xy 109.22 100.33) (xy 114.3 100.33)
 		)
 		(stroke
 			(width 0)
@@ -3231,6 +3253,16 @@
 	)
 	(wire
 		(pts
+			(xy 121.92 102.87) (xy 132.08 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e0e3d01e-f4ca-4fd8-8ea5-a6d9c5fa30b9")
+	)
+	(wire
+		(pts
 			(xy 124.46 120.65) (xy 124.46 124.46)
 		)
 		(stroke
@@ -3258,6 +3290,16 @@
 			(type default)
 		)
 		(uuid "f0f2d107-036d-4ca2-a76a-a631b43a3970")
+	)
+	(wire
+		(pts
+			(xy 121.92 100.33) (xy 121.92 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fd3ead95-ae8a-4cf8-9da7-042e627067ba")
 	)
 	(global_label "SW2"
 		(shape input)
@@ -4546,6 +4588,75 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 114.3 96.52 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "7bc447c2-5735-43d4-a3f4-6f4a630c9fe7")
+		(property "Reference" "R3"
+			(at 116.078 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1k"
+			(at 116.078 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal"
+			(at 112.522 96.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 114.3 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 114.3 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "77b52329-3b07-4789-8caa-9ef4abb1be83")
+		)
+		(pin "2"
+			(uuid "06251643-3501-4939-a92d-a31b4c307b61")
+		)
+		(instances
+			(project "ECE_299_ALARM"
+				(path "/8a313705-b4dc-439e-ab35-d82e7777793e"
+					(reference "R3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+3.3V")
 		(at 96.52 77.47 0)
 		(unit 1)
@@ -4746,6 +4857,71 @@
 			(project "ECE_299_ALARM"
 				(path "/8a313705-b4dc-439e-ab35-d82e7777793e"
 					(reference "SW4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 121.92 92.71 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "b194d08b-89f6-4929-b377-32efc66b2b02")
+		(property "Reference" "#PWR021"
+			(at 121.92 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 121.92 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 121.92 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 121.92 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 121.92 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "bfb7ae27-bf1e-418d-b24a-9ce2e33cca41")
+		)
+		(instances
+			(project "ECE_299_ALARM"
+				(path "/8a313705-b4dc-439e-ab35-d82e7777793e"
+					(reference "#PWR021")
 					(unit 1)
 				)
 			)
@@ -5486,6 +5662,75 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 121.92 96.52 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "dca414d4-b3af-45d8-bdf4-84126da9c18e")
+		(property "Reference" "R4"
+			(at 123.444 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1k"
+			(at 123.444 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P12.70mm_Horizontal"
+			(at 120.142 96.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 121.92 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 121.92 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0c196fff-4535-4c6d-bbcc-f802dee07adf")
+		)
+		(pin "2"
+			(uuid "cd565ce1-3910-4b14-ba3e-e8a73ab730e5")
+		)
+		(instances
+			(project "ECE_299_ALARM"
+				(path "/8a313705-b4dc-439e-ab35-d82e7777793e"
+					(reference "R4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Amplifier_Audio:LM386")
 		(at 231.14 90.17 0)
 		(unit 1)
@@ -5565,6 +5810,72 @@
 			(project ""
 				(path "/8a313705-b4dc-439e-ab35-d82e7777793e"
 					(reference "U3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 114.3 92.71 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e34c8edb-481d-4d97-8f56-f507af86e7ca")
+		(property "Reference" "#PWR019"
+			(at 114.3 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 114.3 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 114.3 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 114.3 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 114.3 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "63858554-3ce8-44b8-833a-c0580aea963c")
+		)
+		(instances
+			(project "ECE_299_ALARM"
+				(path "/8a313705-b4dc-439e-ab35-d82e7777793e"
+					(reference "#PWR019")
 					(unit 1)
 				)
 			)
