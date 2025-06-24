@@ -5566,7 +5566,7 @@
 				)
 			)
 		)
-		(property "Footprint" "ECE:Transformer_Block_AVB_03526"
+		(property "Footprint" "Package_DIP:DIP-8_W7.62mm"
 			(at 233.68 87.63 0)
 			(effects
 				(font
