@@ -6247,7 +6247,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_Wire:SolderWire-0.1sqmm_1x01_D0.4mm_OD1mm"
 			(at 163.83 41.91 0)
 			(effects
 				(font
