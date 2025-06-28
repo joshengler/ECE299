@@ -19,8 +19,12 @@ psu_mode.value(1)
 
 # clear the screen and init clock
 oled.fill(0)
+oled.text("Hello", 0, 0)
+oled.show()
 # clock = multifunction_clock(oled, radio_i2c, x=0, y=54) comment out for now.
 clock = multifunction_clock(oled, x=0, y=54)
+
+
 
 # serve webpage
 start_web_app(clock)
@@ -29,4 +33,3 @@ start_web_app(clock)
 # btn2 = debounced_button(pin_num=1, callback=lambda: clock.handle_buttons("down"))  
 # btn3 = debounced_button(pin_num=2, callback=lambda: clock.handle_buttons("mode"))  
 # btn4 = debounced_button(pin_num=3, callback=lambda: clock.handle_buttons("set"))
-

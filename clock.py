@@ -1,13 +1,27 @@
-from machine import RTC, Timer, Pin
+from machine import Timer, Pin, I2C
 import time, sys
 import rda5807
+import urtc
+
+i2c = I2C(1, scl=Pin(15), sda=Pin(14))
+
 class multifunction_clock:
     # init everything under the sun
     def __init__(self, display, x=0, y=0):
         self.display = display
         self.x = x # where to draw the clock on the display
         self.y = y # where to draw the clock on the display
-        self.rtc = RTC() # initialize the RTC
+        self.rtc = urtc.DS3231(i2c) # initialize the RTC
+        
+        # Check if RTC needs to be initialize
+        current_time = self.rtc.datetime()
+        if current_time[0] == 2000: # if year is 2000, rtc is not initialized
+            local_time = time.localtime() # get local time
+            self.rtc.datetime(local_time) # set rtc to local time
+            print("Initialized RTC to local time")
+        else:
+            print("RTC already intialized:", self.rtc.datetime())
+            
         self.mode = "TIME" # start in time mode
         self.radio_frequency = 101.9 # default FM frequency
         self.radio_volume = 0 # default volume level
