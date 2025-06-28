@@ -38,16 +38,16 @@ def connect():
 
 # serve webpage
 
-def serve_file(path, mutlifunction_clock):
+def serve_file(path, multifunction_clock):
     if path == "/" or path == "/on?" or path == "/off?":
         path = "/INDEX.html"
         with open("web/INDEX.html", "r") as file:
             html = file.read()
         if state is not None:
             html = html.format(
-                time=mutlifunction_clock.get_time(),
-                checked="checked" if mutlifunction_clock.format_24h else "",
-                format_24h="true" if mutlifunction_clock.format_24h else "false"
+                time=multifunction_clock.get_time(),
+                checked="checked" if multifunction_clock.format_24h else "",
+                format_24h="true" if multifunction_clock.format_24h else "false"
             )
         return html, "text/html"
     else:
@@ -57,7 +57,7 @@ def serve_file(path, mutlifunction_clock):
             if path.endswith(".css"):
                 return content, "text/css"
             elif path.endswith(".js"):
-                content = content.replace("{time}", mutlifunction_clock.get_time())
+                content = content.replace("{time}", multifunction_clock.get_time())
                 return content, "application/javascript"
             else:
                 return content, "text/plain"
@@ -72,10 +72,10 @@ def open_socket(): # allows devices to send and receive information
     
     return(s)
 
-def handle_set_time(path, mutlifunction_clock):
+def handle_set_time(path, multifunction_clock):
     
     # grab current time on the rtc
-    current = list(mutlifunction_clock.rtc.datetime())
+    current = list(multifunction_clock.rtc.datetime())
     
     try:
         # clean up URL path and make hashmap
@@ -87,15 +87,15 @@ def handle_set_time(path, mutlifunction_clock):
         m = int(query["m"])
         s = int(query["s"])
         format = query.get("format", "24") # gets the format, uses 24hr if one isn't
-        mutlifunction_clock.am_pm = query.get("am_pm", "AM")
+        multifunction_clock.am_pm = query.get("am_pm", "AM")
         
         print("Requested format:", format)
-        print("AM/PM:", mutlifunction_clock.am_pm)
+        print("AM/PM:", multifunction_clock.am_pm)
         
         if format == "12":
-            if mutlifunction_clock.am_pm == "PM" and h < 12:
+            if multifunction_clock.am_pm == "PM" and h < 12:
                 h += 12
-            elif mutlifunction_clock.am_pm == "AM" and h == 12:
+            elif multifunction_clock.am_pm == "AM" and h == 12:
                 h = 0;
                 
         # replace hours, minutes, seconds on the rtc
@@ -103,13 +103,13 @@ def handle_set_time(path, mutlifunction_clock):
         current[5] = m
         current[6] = s
         
-        mutlifunction_clock.rtc.datetime(current)
-        print("Time updated to:", mutlifunction_clock.get_time())
+        multifunction_clock.rtc.datetime(current)
+        print("Time updated to:", multifunction_clock.get_time())
     except Exception as e:
         print("Failed to update time:", e)
     
 
-def start_web_app(mutlifunction_clock):
+def start_web_app(multifunction_clock):
 
     ap_setup()
 
@@ -131,34 +131,46 @@ def start_web_app(mutlifunction_clock):
             print("Client requested:", path)
                 
             if path.startswith("/set_time"):
-                handle_set_time(path, mutlifunction_clock)
+                handle_set_time(path, multifunction_clock)
                 
-                # redirect to homepage and clear URL
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /\r\n")
                 client.send("\r\n")
                 client.close()
                 
             elif path.startswith("/set_format?format=24"):
-                mutlifunction_clock.format_24h = True
+                multifunction_clock.format_24h = True
                 
-                # redirect to homepage and clear URL
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /\r\n")
                 client.send("\r\n")
                 client.close()
                 
             elif path.startswith("/set_format"):
-                mutlifunction_clock.format_24h = False
-                
-                # redirect to homepage and clear URL
+                multifunction_clock.format_24h = False
+
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /\r\n")
                 client.send("\r\n")
                 client.close()
+            
+            elif path.startswith("/get_settings"):
+                settings = {
+                    "time": multifunction_clock.get_time(),
+                    "format_24h": multifunction_clock.format_24h,
+                    "am_pm": multifunction_clock.am_pm if not multifunction_clock.format_24h else ""
+                    }
+                
+                import ujson
+                
+                response_body = ujson.dumps(settings)
+                client.send("HTTP/1.1 200 OK\r\n")
+                client.send("Content-Type: application/json\r\n\r\n")
+                client.send(response_body)
+                client.close()
                 
             else:
-                response_body, content_type = serve_file(path, mutlifunction_clock)
+                response_body, content_type = serve_file(path, multifunction_clock)
                 client.send("HTTP/1.1 200 OK\r\n")
                 client.send("Content-Type: {}\r\n\r\n".format(content_type))
                 client.sendall(response_body.encode("utf-8"))
