@@ -33,10 +33,35 @@
 
 }
 
+/* clock info */
 .clock_container{
     display: flex;
     justify-content: center;
     
+}
+
+/* time display format */
+#time {
+    font-size: 60pt; /* or use 64px, 5em, etc. */
+    font-weight: bold;
+    text-align: center;
+    display: block;
+    margin-top: 20px;
+}
+
+/* alarm info */
+.alarm_container{
+    display: flex;
+    justify-content: center;
+    
+}
+
+#alarm {
+    font-size: 60pt; /* or use 64px, 5em, etc. */
+    font-weight: bold;
+    text-align: center;
+    display: block;
+    margin-top: 20px;
 }
 
 .view{
@@ -55,11 +80,4 @@
     display:block;
 }
 
-/* time display format */
-#time {
-    font-size: 60pt; /* or use 64px, 5em, etc. */
-    font-weight: bold;
-    text-align: center;
-    display: block;
-    margin-top: 20px;
-}
+
