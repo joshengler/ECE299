@@ -40,7 +40,7 @@ class multifunction_clock:
         self.alarm_triggered = False # start with alarm not triggered (duh)
         self.snooze_active = False # start with snooze not active (what would we be snoozing?)
         self.alarm_enabled = False # start with alarm disabled (we dont want to wake up at 7am on a weekend)
-        self.format_24h = True # default to 24-hour format, its better
+        self.format_24h = False # default to 24-hour format, its better
         self.am_pm = "AM" # AM by default
         self.led_state = False
         self.original_alarm_hour = 7 # when unsnoozed, the alarm will return to this time

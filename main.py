@@ -19,8 +19,7 @@ psu_mode.value(1)
 
 # clear the screen and init clock
 oled.fill(0)
-oled.text("Hello", 0, 0)
-oled.show()
+
 # clock = multifunction_clock(oled, radio_i2c, x=0, y=54) comment out for now.
 clock = multifunction_clock(oled, x=0, y=54)
 

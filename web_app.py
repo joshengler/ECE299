@@ -46,8 +46,10 @@ def serve_file(path, multifunction_clock):
         if state is not None:
             html = html.format(
                 time=multifunction_clock.get_time(),
-                checked="checked" if multifunction_clock.format_24h else "",
-                format_24h="true" if multifunction_clock.format_24h else "false"
+                clockChecked="checked" if multifunction_clock.format_24h else "",
+                alarmChecked="checked" if multifunction_clock.alarm_enabled else "",
+                format_24h="true" if multifunction_clock.format_24h else "false",
+                alarm=multifunction_clock.format_time(multifunction_clock.original_alarm_hour, multifunction_clock.original_alarm_minute)
             )
         return html, "text/html"
     else:
@@ -108,6 +110,39 @@ def handle_set_time(path, multifunction_clock):
     except Exception as e:
         print("Failed to update time:", e)
     
+def handle_set_alarm(path, multifunction_clock):
+    
+    try:
+        params = path.split("?")[1]
+        parts = params.split("&");
+        query = {kv.split("=")[0]: kv.split("=")[1] for kv in parts}
+        
+        h = int(query["h"])
+        m = int(query["m"])
+        
+        format = query.get("format", "24") # gets the format, uses 24hr if one isn't
+        multifunction_clock.am_pm = query.get("am_pm", "AM")
+        
+        print("Requested format:", format)
+        print("AM/PM:", multifunction_clock.am_pm)
+        
+        if format == "12":
+            if multifunction_clock.am_pm == "PM" and h < 12:
+                h += 12
+            elif multifunction_clock.am_pm == "AM" and h == 12:
+                h = 0;
+            
+        # update alarm time
+        multifunction_clock.original_alarm_hour = h
+        multifunction_clock.original_alarm_minute = m
+        
+        multifunction_clock.alarm_hour = h
+        multifunction_clock.alarm_minute = m
+        
+        print("Alarm updated to:", multifunction_clock.format_time(h, m))
+    
+    except Exception as e:
+        print("Failed to update alarm", e)
 
 def start_web_app(multifunction_clock):
 
@@ -130,15 +165,8 @@ def start_web_app(multifunction_clock):
                 
             print("Client requested:", path)
                 
-            if path.startswith("/set_time"):
-                handle_set_time(path, multifunction_clock)
-                
-                client.send("HTTP/1.1 303 See Other\r\n")
-                client.send("Location: /\r\n")
-                client.send("\r\n")
-                client.close()
-                
-            elif path.startswith("/set_format?format=24"):
+            # use 24hr time    
+            if path.startswith("/set_format?format=24"):
                 multifunction_clock.format_24h = True
                 
                 client.send("HTTP/1.1 303 See Other\r\n")
@@ -146,6 +174,7 @@ def start_web_app(multifunction_clock):
                 client.send("\r\n")
                 client.close()
                 
+            # use 12hr time 
             elif path.startswith("/set_format"):
                 multifunction_clock.format_24h = False
 
@@ -153,12 +182,52 @@ def start_web_app(multifunction_clock):
                 client.send("Location: /\r\n")
                 client.send("\r\n")
                 client.close()
+                
+            # set clock time
+            elif path.startswith("/set_time"):
+                handle_set_time(path, multifunction_clock)
+                
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /#TIME\r\n")
+                client.send("\r\n")
+                client.close()
             
+            # set alarm time
+            elif path.startswith("/set_alarm"):
+                handle_set_alarm(path, multifunction_clock)
+                
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /#ALARM\r\n")
+                client.send("\r\n")
+                client.close()
+                
+            # disable alarm
+            elif path.startswith("/alarm_enabled"):
+                multifunction_clock.alarm_enabled = True;
+                
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /#ALARM\r\n")
+                client.send("\r\n")
+                client.close()
+            
+            # enable alarm
+            elif path.startswith("/alarm_disabled"):
+                multifunction_clock.alarm_enabled = False;
+                
+                client.send("HTTP/1.1 303 See Other\r\n")
+                client.send("Location: /#ALARM\r\n")
+                client.send("\r\n")
+                client.close()
+            
+            # send settings to browser
             elif path.startswith("/get_settings"):
                 settings = {
                     "time": multifunction_clock.get_time(),
                     "format_24h": multifunction_clock.format_24h,
-                    "am_pm": multifunction_clock.am_pm if not multifunction_clock.format_24h else ""
+                    "am_pm": multifunction_clock.am_pm if not multifunction_clock.format_24h else "",
+                    "alarm_hour": multifunction_clock.original_alarm_hour,
+                    "alarm_minute": multifunction_clock.original_alarm_minute,
+                    "alarm_toggle": multifunction_clock.alarm_enabled
                     }
                 
                 import ujson
@@ -167,6 +236,24 @@ def start_web_app(multifunction_clock):
                 client.send("HTTP/1.1 200 OK\r\n")
                 client.send("Content-Type: application/json\r\n\r\n")
                 client.send(response_body)
+                client.close()
+            
+            # switch between TIME, RADIO, ALARM modes
+            elif path.startswith("/set_mode"):
+                try:
+                    params = path.split("?")[1]
+                    parts = params.split("&")
+                    query = {kv.split("=")[0]: kv.split("=")[1] for kv in parts}
+                    mode = query.get("mode", "").upper()
+                    if mode in ["TIME", "ALARM", "RADIO"]:
+                        multifunction_clock.mode = mode
+                        print("Set display mode to:", mode)
+                        client.send("HTTP/1.1 200 OK\r\n\r\n")
+                    else:
+                        client.send("HTTP/1.1 400 Bad Request\r\n\r\n")
+                except Exception as e:
+                    print("Error setting mode:", e)
+                    client.send("HTTP/1.1 400 Bad Request\r\n\r\n")
                 client.close()
                 
             else:
@@ -180,5 +267,8 @@ def start_web_app(multifunction_clock):
     except OSError as e:
         print("error: connection terminated")
         client.close()
+
+
+
 
 
