@@ -1,35 +1,18 @@
-from machine import Timer, Pin, I2C
-import time, sys
-import rda5807
-import urtc
-
-i2c = I2C(1, scl=Pin(15), sda=Pin(14))
-
+from machine import RTC, Timer, Pin
+import time, rda5807
 class multifunction_clock:
     # init everything under the sun
-    def __init__(self, display, x=0, y=0):
+    def __init__(self, display, radio_i2c):
         self.display = display
-        self.x = x # where to draw the clock on the display
-        self.y = y # where to draw the clock on the display
-        self.rtc = urtc.DS3231(i2c) # initialize the RTC
-        
-        # Check if RTC needs to be initialize
-        current_time = self.rtc.datetime()
-        if current_time[0] == 2000: # if year is 2000, rtc is not initialized
-            local_time = time.localtime() # get local time
-            self.rtc.datetime(local_time) # set rtc to local time
-            print("Initialized RTC to local time")
-        else:
-            print("RTC already intialized:", self.rtc.datetime())
-            
+        self.rtc = RTC() # initialize the RTC
         self.mode = "TIME" # start in time mode
         self.radio_frequency = 101.9 # default FM frequency
         self.radio_volume = 0 # default volume level
         # configure radio module
-#         self.radio = rda5807.Radio(radio_i2c)
-#         self.radio.set_volume(self.radio_volume)
-#         self.radio.set_frequency_MHz(self.radio_frequency)
-#         self.radio.mute(True)
+        self.radio = rda5807.Radio(radio_i2c)
+        self.radio.set_volume(self.radio_volume)
+        self.radio.set_frequency_MHz(self.radio_frequency)
+        self.radio.mute(True)
         # other vars for the clock/alarm/radio
         self.line_spacing = 10 # Line spacing for text display (px)
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
@@ -40,8 +23,7 @@ class multifunction_clock:
         self.alarm_triggered = False # start with alarm not triggered (duh)
         self.snooze_active = False # start with snooze not active (what would we be snoozing?)
         self.alarm_enabled = False # start with alarm disabled (we dont want to wake up at 7am on a weekend)
-        self.format_24h = False # default to 24-hour format, its better
-        self.am_pm = "AM" # AM by default
+        self.format_24h = True # default to 24-hour format, its better
         self.led_state = False
         self.original_alarm_hour = 7 # when unsnoozed, the alarm will return to this time
         self.original_alarm_minute = 0 # when unsnoozed, the alarm will return to this time
@@ -50,9 +32,6 @@ class multifunction_clock:
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
-        # separate timer to poll RDS continuously
-        #self.rds_timer = Timer()
-        #self.rds_timer.init(period=1000, mode=Timer.PERIODIC, callback=self.radio.update_rds)
     # helper function to format time strings
     def format_time(self, hour, minute, second=None):
         if self.format_24h:
@@ -60,19 +39,11 @@ class multifunction_clock:
                 return f"{hour:02d}:{minute:02d}:{second:02d}"
             return f"{hour:02d}:{minute:02d}"
         else:
-            self.am_pm = "AM" if hour < 12 else "PM"
+            am_pm = "AM" if hour < 12 else "PM"
             display_hour = hour % 12 or 12
             if second is not None:
-                return f"{display_hour:02d}:{minute:02d}:{second:02d} {self.am_pm}"
-            return f"{display_hour:02d}:{minute:02d} {self.am_pm}"
-        
-    # return current time to display on web app
-    def get_time(self):
-    
-        years, months, days, weekdays, hours, minutes, seconds, subseconds = self.rtc.datetime()
-    
-        return "{:02d}:{:02d}:{:02d}".format(hours, minutes, seconds)
-
+                return f"{display_hour:02d}:{minute:02d}:{second:02d} {am_pm}"
+            return f"{display_hour:02d}:{minute:02d} {am_pm}"
     # helper function to enforce value limits on time, alarm, and radio settings
     def adjust_value(self, field, delta):
         if self.mode == "TIME":
@@ -94,16 +65,14 @@ class multifunction_clock:
                 self.alarm_enabled = not self.alarm_enabled
         elif self.mode == "RADIO":
             if field == 0:  # frequency
-                # frequency manual stepping
-                #self.radio_frequency = max(88.0, min(108.0, self.radio_frequency + delta * 0.1))
+                # frequency manual stepping # self.radio_frequency = max(88.0, min(108.0, self.radio_frequency + delta * 0.1))
                 if delta > 0: # frequency seeking
                     self.radio.seek_up()
                 else:
                     self.radio.seek_down()
-            elif field == 1:  # volume
+            elif field == 1:  # volume. driver only outputs 4 bits 0-15, but that will wrap, which is not desired.
                 self.radio_volume = max(0, min(15, self.radio_volume + delta)) # enforce volume limits 0-15
-            # Update the radio settings
-            self.update_radio(mute=False, freq=None, vol=self.radio_volume)
+            self.update_radio(mute=False, freq=None, vol=self.radio_volume) # Update the radio settings
             self.radio_status()   
     #radio wrappers
     def update_radio(self, mute=None, freq=None, vol=None):
@@ -120,6 +89,7 @@ class multifunction_clock:
         self.radio_frequency = freq  # update the instance variable
         mute = self.radio.mute_flag
         mono = self.radio.mono_flag
+        #print(f"Radio Status - Frequency: {freq:.1f} MHz, Volume: {vol}/15, Mute: {mute}, Mono: {mono}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
@@ -136,13 +106,11 @@ class multifunction_clock:
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
         self.display.text("TIME", 0, 0)
         self.display.text(self.format_time(hour, minute, second), 0, self.line_spacing * 2)
-        self.display.text(f"{month:02d}/{day:02d}/{year}", 0, self.line_spacing * 3)
         self.display.text("24H" if self.format_24h else "12H", 100, 0)
     
         if self.editing:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET FORMAT"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) # 4 +1 for that nice spacing (someone tried to tell me its just 5)
-    # draw the alarm UI
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5) 
     def draw_alarm_mode(self):
         self.display.text("ALARM", 0, 0)
         self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 2)
@@ -150,34 +118,18 @@ class multifunction_clock:
         
         if self.alarm_triggered:
             self.display.text("ALARM: Triggered!", 0, 0)
-            self.display.text("Press SET to snooze", 0, self.line_spacing * 4 + self.line_spacing)
+            self.display.text("Press SET to snooze", 0, self.line_spacing * 5)
         elif self.snooze_active:
             self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 4)
         elif self.editing:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET ON/OFF"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4 + self.line_spacing) #
-    def get_station_name(self):
-        return ''.join(self.radio.station_name).strip()
-
-    # helper to read RadioText
-    def get_radio_text(self):
-        return ''.join(self.radio.radio_text).strip()
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5)
 
     # draw the radio UI
     def draw_radio_mode(self):
+        #self.radio.optimize_blending()  # optimize blending for better performance
         self.display.text(f"RADIO FM {self.radio_frequency:.1f}", 0, 0)
-        self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}/7", 0, self.line_spacing * 1)
-
-        # show RDS station name and radio text
-        #sn = self.get_station_name() or "No Station Name"
-        #rt = self.get_radio_text()    or "No Radio Text"
-        #self.display.text(sn, 0, self.line_spacing * 2)
-        # split RT into two lines of max 14 chars, if we have more, we are cooked. it gets truncated.
-        #rt1 = rt[:14]
-        #rt2 = rt[14:28] if len(rt) > 14 else ""
-        #self.display.text(rt1, 0, self.line_spacing * 3)
-        #self.display.text(rt2, 0, self.line_spacing * 4)
-
+        self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}", 0, self.line_spacing * 1)
         if self.editing:
             edit_labels = ["SET FREQ", "SET VOLUME"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5)
@@ -224,7 +176,6 @@ class multifunction_clock:
         if self.alarm_triggered:
             self.snooze_alarm()
             return
-            
         if self.mode in ["TIME", "ALARM", "RADIO"]:
             if not self.editing:
                 self.editing = True
@@ -245,20 +196,19 @@ class multifunction_clock:
         self.snooze_count += 1
         self.snooze_active = True
         self.stop_alarm_blink()
-        
         snooze_minutes = max(1, 10 // self.snooze_count) # snooze for 10, 5, 3, 2... minutes depending on snooze count
         total_minutes = self.alarm_hour * 60 + self.alarm_minute + snooze_minutes 
         self.alarm_hour = (total_minutes // 60) % 24
         self.alarm_minute = total_minutes % 60
     
-    def blink_led(self, timer=None):
+    def blink_led(self, timer=None): # blink the LED to indicate alarm is triggered
         self.led_state = not self.led_state
         self.led.value(self.led_state)
     
     def start_alarm_blink(self):
-        self.blink_timer.init(period=50, mode=Timer.PERIODIC, callback=self.blink_led)
+        self.blink_timer.init(period=50, mode=Timer.PERIODIC, callback=self.blink_led) # blink 20 times a second
     
-    def stop_alarm_blink(self):
+    def stop_alarm_blink(self): # stop blinking the LED
         self.blink_timer.deinit()
         self.led.value(0)
         self.led_state = False
@@ -271,7 +221,5 @@ class multifunction_clock:
                     self.original_alarm_hour = self.alarm_hour
                     self.original_alarm_minute = self.alarm_minute
                     self.snooze_count = 0
-                
                 self.alarm_triggered = True
                 self.start_alarm_blink()
-
