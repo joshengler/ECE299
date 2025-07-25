@@ -9,10 +9,15 @@ class multifunction_clock:
         self.radio_frequency = 101.9 # default FM frequency
         self.radio_volume = 0 # default volume level
         # configure radio module
-        self.radio = rda5807.Radio(radio_i2c)
-        self.radio.set_volume(self.radio_volume)
-        self.radio.set_frequency_MHz(self.radio_frequency)
-        self.radio.mute(True)
+        try:
+            self.radio = rda5807.Radio(radio_i2c)
+            self.radio.set_volume(self.radio_volume)
+            self.radio.set_frequency_MHz(self.radio_frequency)
+            self.radio.mute(True)
+        except Exception as e:
+            print(f"Radio initialization failed: {e}")
+            self.radio = None
+
         # other vars for the clock/alarm/radio
         self.line_spacing = 10 # Line spacing for text display (px)
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
@@ -127,6 +132,10 @@ class multifunction_clock:
 
     # draw the radio UI
     def draw_radio_mode(self):
+        #if radio is None: # if radio is not initialized, display error
+        if self.radio is None:
+            self.display.text("RADIO: Not initialized", 0, 0)
+            return
         #self.radio.optimize_blending()  # optimize blending for better performance
         self.display.text(f"RADIO FM {self.radio_frequency:.1f}", 0, 0)
         self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}", 0, self.line_spacing * 1)
@@ -167,9 +176,9 @@ class multifunction_clock:
             old_mode = self.mode # save the old mode before changing, so we can handle radio mute state correctly
             self.mode = modes[(current_index + 1) % len(modes)]
             # mute radio when leaving radio mode, unmute when entering
-            if old_mode == "RADIO" and self.mode != "RADIO":
+            if old_mode == "RADIO" and self.mode != "RADIO" and self.radio is not None:
                 self.update_radio(mute=True)
-            elif old_mode != "RADIO" and self.mode == "RADIO":
+            elif old_mode != "RADIO" and self.mode == "RADIO" and self.radio is not None:
                 self.update_radio(mute=False)
     # child handler for set button -> toggles editing or snoozes alarm
     def button_set(self): #if the alarm is triggered, snooze it.
