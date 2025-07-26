@@ -104,7 +104,7 @@ class Radio:
         self.i2c = i2c
         self.mute_flag = False
         self.bass_boost_flag = True
-        self.mono_flag = False
+        self.mono_flag = True
         
         #read chip ID and check
         data = self.read_reg(RDA5807M_REG_CHIPID)
@@ -373,7 +373,8 @@ class Radio:
                     hours = hours_utc - utc_offset
                 try:
                     #self.rtc.datetime((2000, 1, 1, 1, int(hours), int(minutes), 0, 0))
-                    print("Got time: {:02d}:{:02d}".format(int(hours), int(minutes)))
+                    #print("Got time: {:02d}:{:02d}".format(int(hours), int(minutes)))
+                    pass
                 except OSError:
                     pass
                 

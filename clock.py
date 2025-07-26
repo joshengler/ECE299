@@ -1,9 +1,17 @@
 from machine import RTC, Timer, Pin
 from micropython import const
 import time, rda5807
+
 NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
 LINE_HEIGHT = const(9)  # Height of each line in pixels
+
+# menu bit masks (UP, DOWN, MODE, SET)
+MENU_UP   = 1 << 3
+MENU_DOWN = 1 << 2
+MENU_MODE = 1 << 1
+MENU_SET  = 1 << 0
+
 class multifunction_clock:
     # init everything under the sun
     def __init__(self, display, radio_i2c):
@@ -42,7 +50,16 @@ class multifunction_clock:
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
+        # start RDS polling every 5 ms
+        #self.rds_timer = Timer()
+        #self.rds_timer.init(period=5, mode=Timer.PERIODIC, callback=self.poll_rds)
         self.invert_flag = False  # track current inversion state
+        # scrolling state for radio text
+        self.scroll_pos = 0
+        self.prev_track = ""
+        self.last_button   = None  # track last pressed button
+        self.buttons_enabled = 0     # which menu buttons are pushable
+
     # helper function to format time strings
     def format_time(self, hour, minute, second=None):
         if self.format_24h:
@@ -103,8 +120,6 @@ class multifunction_clock:
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
-        # we invert the display here cuz we want it in every mode, not just alarm mode.
-
         if self.alarm_triggered:
             self.display.invert(not self.invert_flag) # invert display when alarm is triggered
             self.invert_flag = not self.invert_flag # toggle invert flag
@@ -117,7 +132,11 @@ class multifunction_clock:
             "RADIO": self.draw_radio_mode
         }
         mode_handlers[self.mode]() # call the appropriate draw function based on mode, now this is peak python right here.
-        self.display.show() # display the buffered content on the OLED. shout at the SPI bus! (now its sad :( you are a bad person)
+        # compute pushable buttons: always MODE and SET, UP/DOWN only in edit
+
+        self.draw_menu_bar()
+        self.display.show()
+
     # draw the time UI
     def draw_time_mode(self):
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
@@ -126,26 +145,25 @@ class multifunction_clock:
         self.display.text("24H" if self.format_24h else "12H", 100, 0)
     
         if self.editing:
-            edit_labels = ["SET Hour", "SET Minute", "SET Format"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5) 
+            edit_labels = ["SET: Hour", "SET: Minute", "SET: Format"]
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4) 
     def draw_alarm_mode(self):
         self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, 0)
         # Display current time immediately under title
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
-        self.display.text("Now: " + self.format_time(hour, minute, second), 0, self.line_spacing * 2)
+        self.display.text("Now: " + self.format_time(hour, minute, second), 0, self.line_spacing * 1)
         # blank gap for line 3
         # alarm time and status
-        #self.display.text("Trigger at:" + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 3)
-        #self.display.text(self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 4)
-        self.display.text("State: " + ("On" if self.alarm_enabled else "Off"), 0, self.line_spacing * 5)
-        # SET / snooze / trigger prompt
+        self.display.text("State: " + ("On" if self.alarm_enabled else "Off"), 0, self.line_spacing * 3)
+        # # SET / snooze / trigger prompt
         if self.alarm_triggered:
-            self.display.text("Press SET to snooze", 0, self.line_spacing * 6)
+            self.display.text("Press SET to snooze", 0, self.line_spacing * 4)
+            # add snooze to available actions mask
         elif self.snooze_active:
-            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 6)
+            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 4)
         elif self.editing:
-            edit_labels = ["Hour", "Minute", "On/Off"]
-            self.display.text("SET: " + edit_labels[self.edit_field], 0, self.line_spacing * 6)
+            edit_labels = ["Set: Hour", "Set: Minute", "Set: On/Off"]
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4) 
 
     # draw the radio UI
     def draw_radio_mode(self):
@@ -156,13 +174,26 @@ class multifunction_clock:
         #self.radio.optimize_blending()  # optimize blending for better performance
         self.display.text(f"Radio FM {self.radio_frequency:.1f}", 0, 0)
         self.display.text(f"Volume:{self.radio_volume}/15 ", 0, self.line_spacing * 1)
+        # # Display RDS on line 2 and 3
+        # if self.radio.station_name:
+        #     self.display.text("S:" + "".join(self.radio.station_name).strip(), 0, self.line_spacing * 2)
+        # # scrolling track window (13 chars)
+        # if self.radio.radio_text:
+        #     track = "".join(self.radio.radio_text).strip()
+        #     # reset scroll on new track
+        #     if track != self.prev_track:
+        #         self.scroll_pos = 0
+        #         self.prev_track = track
+        #     window = self.scroll_text(track, 13)
+        #     self.display.text("T:" + window, 0, self.line_spacing * 3)
         self.draw_signal(14*8, self.line_spacing * 1, int(self.radio.get_signal_strength() // (MAX_RSSI/NUM_BARS)))
         if self.editing:
-            edit_labels = ["SET Frequency", "SET Volume"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5)
+            edit_labels = ["SET: Frequency", "SET: Volume"]
+            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4)
     
     # parent handler for button presses
     def handle_buttons(self, button_type):
+        self.last_button = button_type
         handlers = {
             "up": self.button_up,
             "down": self.button_down,
@@ -199,7 +230,7 @@ class multifunction_clock:
             elif old_mode != "RADIO" and self.mode == "RADIO" and self.radio is not None:
                 self.update_radio(mute=False)
     # child handler for set button -> toggles editing or snoozes alarm
-    def button_set(self): #if the alarm is triggered, snooze it.
+    def button_set(self):  # child handler for set button -> toggles editing or snoozes alarm
         if self.alarm_triggered:
             self.snooze_alarm()
             return
@@ -207,8 +238,12 @@ class multifunction_clock:
             if not self.editing:
                 self.editing = True
                 self.edit_field = 0
+                # now in freq‐edit: only UP/DOWN (plus MODE/SET) are pushable
+                self.buttons_enabled = MENU_UP | MENU_DOWN | MENU_MODE | MENU_SET
             else:
                 self.editing = False
+                # back to default: only MODE/SET
+                self.buttons_enabled = MENU_MODE | MENU_SET
     # reset the alarm to its original time (before snoozing that may or may not have happened) and stop blinking the LED
     def reset_alarm(self):
         self.display.invert(0)
@@ -265,3 +300,44 @@ class multifunction_clock:
             else:
                 # outline only
                 self.display.rect(xi, yi, bar_width, height, 1)
+    def poll_rds(self, timer=None):
+        """Called every 5ms to collect RDS blocks and print over serial."""
+        if self.radio:
+            self.radio.update_rds()
+    def scroll_text(self, text, width):
+        """Return a width‐char window into text, scrolling by one char each call."""
+        if len(text) <= width:
+            # pad manually since MicroPython str.ljust is unavailable
+            return text + " " * (width - len(text))
+        padding = " " * width
+        buf = text + padding
+        start = self.scroll_pos % len(buf)
+        win = buf[start:start+width]
+        if len(win) < width:
+            win += buf[: width - len(win)]
+        self.scroll_pos = (self.scroll_pos + 3) % len(buf)
+        return win
+
+    def draw_menu_bar(self):
+
+        self.buttons_enabled = MENU_MODE | MENU_SET
+        if self.editing:
+            self.buttons_enabled |= MENU_UP | MENU_DOWN
+        
+        # draw labels on 6th text line, highlight last pressed
+        y = self.line_spacing * 6
+        labels    = ["UP", "DOWN", "MODE", "SET"]
+        positions = [0, 20, 60, 100]
+        masks     = [MENU_UP, MENU_DOWN, MENU_MODE, MENU_SET]
+
+        for label, x, mask in zip(labels, positions, masks):
+            self.display.text(label, x, y)
+            if self.last_button and self.last_button.upper() == label:
+                # solid line for last pressed
+                self.display.hline(x, y - 2, len(label) * 8, 1)
+            elif self.buttons_enabled & mask:
+                # dotted line for pushable
+                width = len(label) * 8
+                for i in range(0, width, 2):
+                    self.display.pixel(x + i, y - 2, 1)
+        self.last_button = None
