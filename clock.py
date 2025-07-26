@@ -1,5 +1,8 @@
 from machine import RTC, Timer, Pin
+from micropython import const
 import time, rda5807
+NUM_BARS = const(4)  # Number of signal strength bars to display
+MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
 class multifunction_clock:
     # init everything under the sun
     def __init__(self, display, radio_i2c):
@@ -19,7 +22,8 @@ class multifunction_clock:
             self.radio = None
 
         # other vars for the clock/alarm/radio
-        self.line_spacing = 10 # Line spacing for text display (px)
+
+        self.line_spacing = 8 # Line spacing for text display (px)
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
         self.alarm_hour = 7 # default alarm hour. bright and early
         self.alarm_minute = 0
@@ -109,7 +113,7 @@ class multifunction_clock:
     # draw the time UI
     def draw_time_mode(self):
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
-        self.display.text("TIME", 0, 0)
+        self.display.text("Clock", 0, 0)
         self.display.text(self.format_time(hour, minute, second), 0, self.line_spacing * 2)
         self.display.text("24H" if self.format_24h else "12H", 100, 0)
     
@@ -117,30 +121,36 @@ class multifunction_clock:
             edit_labels = ["SET HOUR", "SET MINUTE", "SET FORMAT"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5) 
     def draw_alarm_mode(self):
-        self.display.text("ALARM", 0, 0)
-        self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 2)
-        self.display.text("Status: " + ("ON" if self.alarm_enabled else "OFF"), 0, self.line_spacing * 3)
-        
+        self.display.text("Alarm", 0, 0)
+        # Display current time immediately under title
+        year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
+        self.display.text("Now: " + self.format_time(hour, minute, second), 0, self.line_spacing * 2)
+        # blank gap
+        self.display.text("", 0, self.line_spacing * 3)
+        # alarm time and status
+        self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 4)
+        self.display.text("Status: " + ("ON" if self.alarm_enabled else "OFF"), 0, self.line_spacing * 5)
+        # SET / snooze / trigger prompt
         if self.alarm_triggered:
-            self.display.text("ALARM: Triggered!", 0, 0)
-            self.display.text("Press SET to snooze", 0, self.line_spacing * 5)
+            self.display.text("Press SET to snooze", 0, self.line_spacing * 6)
         elif self.snooze_active:
-            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 4)
+            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 6)
         elif self.editing:
-            edit_labels = ["SET HOUR", "SET MINUTE", "SET ON/OFF"]
-            self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5)
+            edit_labels = ["SET Hour", "SET Minute", "Enable/Disable"]
+            self.display.text("SET: " + edit_labels[self.edit_field], 0, self.line_spacing * 6)
 
     # draw the radio UI
     def draw_radio_mode(self):
         #if radio is None: # if radio is not initialized, display error
         if self.radio is None:
-            self.display.text("RADIO: Not initialized", 0, 0)
+            self.display.text("Radio->Not initialized", 0, 0)
             return
         #self.radio.optimize_blending()  # optimize blending for better performance
-        self.display.text(f"RADIO FM {self.radio_frequency:.1f}", 0, 0)
-        self.display.text(f"V:{self.radio_volume}/15 RSSI:{self.radio.get_signal_strength()}", 0, self.line_spacing * 1)
+        self.display.text(f"Radio FM {self.radio_frequency:.1f}", 0, 0)
+        self.display.text(f"Volume:{self.radio_volume}/15 ", 0, self.line_spacing * 1)
+        self.draw_signal(14*8, self.line_spacing * 1, int(self.radio.get_signal_strength() // (MAX_RSSI/NUM_BARS)))
         if self.editing:
-            edit_labels = ["SET FREQ", "SET VOLUME"]
+            edit_labels = ["SET Frequency", "SET Volume"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5)
     
     # parent handler for button presses
@@ -199,12 +209,19 @@ class multifunction_clock:
         self.alarm_hour = self.original_alarm_hour
         self.alarm_minute = self.original_alarm_minute
         self.stop_alarm_blink()
+        # Mute radio when alarm is cleared
+        if self.radio:
+            self.update_radio(mute=True)
+
     # manage snoozing the alarm with decreasing intervals, so we arn't late for that meeting
     def snooze_alarm(self):
         self.alarm_triggered = False
         self.snooze_count += 1
         self.snooze_active = True
         self.stop_alarm_blink()
+        # Mute radio when alarm is snoozed
+        if self.radio:
+            self.update_radio(mute=True)
         snooze_minutes = max(1, 10 // self.snooze_count) # snooze for 10, 5, 3, 2... minutes depending on snooze count
         total_minutes = self.alarm_hour * 60 + self.alarm_minute + snooze_minutes 
         self.alarm_hour = (total_minutes // 60) % 24
@@ -232,3 +249,26 @@ class multifunction_clock:
                     self.snooze_count = 0
                 self.alarm_triggered = True
                 self.start_alarm_blink()
+                # Unmute radio when alarm triggers
+                if self.radio:
+                    self.update_radio(mute=False)
+
+    def draw_signal(self, x, y, bars):
+        # clamp bars between 0 and 5
+        bars = max(0, min(5, bars))
+        bar_count = NUM_BARS       # module‐level constant
+        bar_width = 4
+        bar_spacing = 0
+        max_height = 8
+
+        for i in range(bar_count):
+            # height grows from smallest to largest
+            height = int((i + 1) / bar_count * max_height)
+            xi = x + i * (bar_width + bar_spacing)
+            yi = y + (max_height - height) 
+            if i < bars:
+                # filled bar
+                self.display.fill_rect(xi, yi, bar_width, height, 1)
+            else:
+                # outline only
+                self.display.rect(xi, yi, bar_width, height, 1)
