@@ -193,7 +193,9 @@ class multifunction_clock:
     
     # parent handler for button presses
     def handle_buttons(self, button_type):
-        self.last_button = button_type
+        # store last pressed button as its mask
+        mask_map = {"up": MENU_UP, "down": MENU_DOWN, "mode": MENU_MODE, "set": MENU_SET}
+        self.last_button = mask_map.get(button_type)
         handlers = {
             "up": self.button_up,
             "down": self.button_down,
@@ -319,25 +321,33 @@ class multifunction_clock:
         return win
 
     def draw_menu_bar(self):
+        # draw labels on 6th text line, highlight last pressed
+        y = self.line_spacing * 6
+        labels    = ["  ", "  ", "MODE", "SET"]
+        positions = [10, 40, 76, 112]
+        masks     = [MENU_UP, MENU_DOWN, MENU_MODE, MENU_SET]
 
         self.buttons_enabled = MENU_MODE | MENU_SET
         if self.editing:
             self.buttons_enabled |= MENU_UP | MENU_DOWN
-        
-        # draw labels on 6th text line, highlight last pressed
-        y = self.line_spacing * 6
-        labels    = ["UP", "DOWN", "MODE", "SET"]
-        positions = [0, 20, 60, 100]
-        masks     = [MENU_UP, MENU_DOWN, MENU_MODE, MENU_SET]
+            # change label for MODE to NEXT
+            labels[2] = "NEXT"
+            labels[3] = "DONE"
+            labels[0] = "UP"
+            labels[1] = "DOWN"
+        if self.alarm_triggered:
+            # set is snooze, mode is off
+            labels[2] = "OFF"
+            labels[3] = "SNOZ"
 
         for label, x, mask in zip(labels, positions, masks):
-            self.display.text(label, x, y)
-            if self.last_button and self.last_button.upper() == label:
+            # Center the text at position x
+            text_width = len(label) * 8
+            text_x = x - text_width // 2
+            self.display.text(label, text_x, y)
+            if self.last_button == mask:
                 # solid line for last pressed
-                self.display.hline(x, y - 2, len(label) * 8, 1)
-            elif self.buttons_enabled & mask:
-                # dotted line for pushable
-                width = len(label) * 8
-                for i in range(0, width, 2):
-                    self.display.pixel(x + i, y - 2, 1)
+                self.display.hline(text_x, y - 2, text_width, 1)
+        self.last_button = None
+            #         self.display.pixel(text_x + i, y - 2, 1)
         self.last_button = None
