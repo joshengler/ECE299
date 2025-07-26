@@ -4,6 +4,8 @@ from ssd1306 import SSD1306_SPI
 from debounced_button import debounced_button # custom button handler with debouncing
 from clock import multifunction_clock # custom clock handler with modes and alarms
 
+from web_app import start_web_app
+
 # minified SSD1306 initialization
 oled_spi = SPI(0, sck=Pin(18), mosi=Pin(19)) # set baud rate to 1 MHz
 oled = SSD1306_SPI(128, 64, oled_spi, Pin(20), Pin(21), Pin(17), True)
@@ -21,3 +23,5 @@ btn1 = debounced_button(pin_num=0, callback=lambda: clock.handle_buttons("up"))
 btn2 = debounced_button(pin_num=1, callback=lambda: clock.handle_buttons("down"))  
 btn3 = debounced_button(pin_num=2, callback=lambda: clock.handle_buttons("mode"))  
 btn4 = debounced_button(pin_num=3, callback=lambda: clock.handle_buttons("set"))
+
+#start_web_app(clock)

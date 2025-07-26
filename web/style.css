@@ -1,0 +1,83 @@
+/* BUTTONS */
+
+.btn_container{
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.btn_settings {
+    width: 200px;
+    background-color: rgb(192, 170, 170);
+    color: white;
+    font-size: 15pt;
+    border: none;
+    padding: 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: all 300ms ease;
+}
+
+.btn_settings:hover {
+    opacity: 0.8;
+    background-color: grey;
+}
+
+.settings_container{
+    min-height: 100px;
+    border: 8px solid black;
+    display: flex;
+    justify-content: center;    
+    align-items: center;
+
+}
+
+/* clock info */
+.clock_container{
+    display: flex;
+    justify-content: center;
+    
+}
+
+/* time display format */
+#time {
+    font-size: 60pt; /* or use 64px, 5em, etc. */
+    font-weight: bold;
+    text-align: center;
+    display: block;
+    margin-top: 20px;
+}
+
+/* alarm info */
+.alarm_container{
+    display: flex;
+    justify-content: center;
+    
+}
+
+#alarm {
+    font-size: 60pt; /* or use 64px, 5em, etc. */
+    font-weight: bold;
+    text-align: center;
+    display: block;
+    margin-top: 20px;
+}
+
+.view{
+    display: none;
+}
+
+.view.active{
+    display: block;
+}
+
+.subview{
+    display: none;
+}
+
+.subview.active{
+    display:block;
+}
+
+
