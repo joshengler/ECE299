@@ -2842,7 +2842,7 @@
 	)
 	(wire
 		(pts
-			(xy 171.45 80.01) (xy 212.09 80.01)
+			(xy 191.77 80.01) (xy 212.09 80.01)
 		)
 		(stroke
 			(width 0)
@@ -2879,6 +2879,16 @@
 			(type default)
 		)
 		(uuid "5845ae97-a9eb-43f4-9cd5-9b607c97e208")
+	)
+	(wire
+		(pts
+			(xy 184.15 80.01) (xy 163.83 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5866f4b5-52d5-46e3-a788-ab8088eaff5f")
 	)
 	(wire
 		(pts
@@ -3440,7 +3450,7 @@
 	)
 	(symbol
 		(lib_id "Device:C_Polarized")
-		(at 167.64 80.01 90)
+		(at 187.96 80.01 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3448,7 +3458,7 @@
 		(dnp no)
 		(uuid "1416e633-d4d4-421b-a71d-7170c8c2bf83")
 		(property "Reference" "C1"
-			(at 168.656 73.66 90)
+			(at 188.976 73.66 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3456,7 +3466,7 @@
 			)
 		)
 		(property "Value" "470uF"
-			(at 169.672 75.946 90)
+			(at 189.992 75.946 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3464,7 +3474,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_THT:C_Radial_D6.3mm_H11.0mm_P2.50mm"
-			(at 171.45 79.0448 0)
+			(at 191.77 79.0448 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3473,7 +3483,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 167.64 80.01 0)
+			(at 187.96 80.01 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3482,7 +3492,7 @@
 			)
 		)
 		(property "Description" "Polarized capacitor"
-			(at 167.64 80.01 0)
+			(at 187.96 80.01 0)
 			(effects
 				(font
 					(size 1.27 1.27)
