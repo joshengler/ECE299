@@ -3,6 +3,7 @@ from micropython import const
 import time, rda5807
 NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
+LINE_HEIGHT = const(9)  # Height of each line in pixels
 class multifunction_clock:
     # init everything under the sun
     def __init__(self, display, radio_i2c):
@@ -23,7 +24,7 @@ class multifunction_clock:
 
         # other vars for the clock/alarm/radio
 
-        self.line_spacing = 8 # Line spacing for text display (px)
+        self.line_spacing = LINE_HEIGHT # Line spacing for text display (px)
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
         self.alarm_hour = 7 # default alarm hour. bright and early
         self.alarm_minute = 0
@@ -41,6 +42,7 @@ class multifunction_clock:
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
+        self.invert_flag = False  # track current inversion state
     # helper function to format time strings
     def format_time(self, hour, minute, second=None):
         if self.format_24h:
@@ -98,10 +100,16 @@ class multifunction_clock:
         self.radio_frequency = freq  # update the instance variable
         mute = self.radio.mute_flag
         mono = self.radio.mono_flag
-        #print(f"Radio Status - Frequency: {freq:.1f} MHz, Volume: {vol}/15, Mute: {mute}, Mono: {mono}")
     # redraw the display when called.
     def tick_update_disp(self, timer=None):
         self.check_alarm() # check if we should make that 'larm go off.
+        # we invert the display here cuz we want it in every mode, not just alarm mode.
+
+        if self.alarm_triggered:
+            self.display.invert(not self.invert_flag) # invert display when alarm is triggered
+            self.invert_flag = not self.invert_flag # toggle invert flag
+            if self.radio:
+                self.update_radio(mute=False)
         self.display.fill(0) # clear buffer
         mode_handlers = { # python moment.
             "TIME": self.draw_time_mode,
@@ -118,17 +126,18 @@ class multifunction_clock:
         self.display.text("24H" if self.format_24h else "12H", 100, 0)
     
         if self.editing:
-            edit_labels = ["SET HOUR", "SET MINUTE", "SET FORMAT"]
+            edit_labels = ["SET Hour", "SET Minute", "SET Format"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 5) 
     def draw_alarm_mode(self):
-        self.display.text("Alarm", 0, 0)
+        self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, 0)
         # Display current time immediately under title
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
         self.display.text("Now: " + self.format_time(hour, minute, second), 0, self.line_spacing * 2)
         # blank gap
         self.display.text("", 0, self.line_spacing * 3)
         # alarm time and status
-        self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 4)
+        #self.display.text("Trigger at:" + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 3)
+        #self.display.text(self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 4)
         self.display.text("Status: " + ("ON" if self.alarm_enabled else "OFF"), 0, self.line_spacing * 5)
         # SET / snooze / trigger prompt
         if self.alarm_triggered:
@@ -203,6 +212,7 @@ class multifunction_clock:
                 self.editing = False
     # reset the alarm to its original time (before snoozing that may or may not have happened) and stop blinking the LED
     def reset_alarm(self):
+        self.display.invert(0)
         self.alarm_triggered = False
         self.snooze_count = 0
         self.snooze_active = False
@@ -215,6 +225,7 @@ class multifunction_clock:
 
     # manage snoozing the alarm with decreasing intervals, so we arn't late for that meeting
     def snooze_alarm(self):
+        self.display.invert(0)  # reset inversion when snoozing
         self.alarm_triggered = False
         self.snooze_count += 1
         self.snooze_active = True
@@ -249,17 +260,13 @@ class multifunction_clock:
                     self.snooze_count = 0
                 self.alarm_triggered = True
                 self.start_alarm_blink()
-                # Unmute radio when alarm triggers
-                if self.radio:
-                    self.update_radio(mute=False)
 
     def draw_signal(self, x, y, bars):
-        # clamp bars between 0 and 5
-        bars = max(0, min(5, bars))
+        bars = max(0, min(NUM_BARS, bars))
         bar_count = NUM_BARS       # module‐level constant
         bar_width = 4
         bar_spacing = 0
-        max_height = 8
+        max_height = LINE_HEIGHT 
 
         for i in range(bar_count):
             # height grows from smallest to largest

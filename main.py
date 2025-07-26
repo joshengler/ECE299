@@ -21,5 +21,3 @@ btn1 = debounced_button(pin_num=0, callback=lambda: clock.handle_buttons("up"))
 btn2 = debounced_button(pin_num=1, callback=lambda: clock.handle_buttons("down"))  
 btn3 = debounced_button(pin_num=2, callback=lambda: clock.handle_buttons("mode"))  
 btn4 = debounced_button(pin_num=3, callback=lambda: clock.handle_buttons("set"))
-
-# removed standalone draw_wifi_signal; use clock.draw_wifi_signal(x, y, bars)
