@@ -133,19 +133,18 @@ class multifunction_clock:
         # Display current time immediately under title
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
         self.display.text("Now: " + self.format_time(hour, minute, second), 0, self.line_spacing * 2)
-        # blank gap
-        self.display.text("", 0, self.line_spacing * 3)
+        # blank gap for line 3
         # alarm time and status
         #self.display.text("Trigger at:" + self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 3)
         #self.display.text(self.format_time(self.alarm_hour, self.alarm_minute), 0, self.line_spacing * 4)
-        self.display.text("Status: " + ("ON" if self.alarm_enabled else "OFF"), 0, self.line_spacing * 5)
+        self.display.text("State: " + ("On" if self.alarm_enabled else "Off"), 0, self.line_spacing * 5)
         # SET / snooze / trigger prompt
         if self.alarm_triggered:
             self.display.text("Press SET to snooze", 0, self.line_spacing * 6)
         elif self.snooze_active:
             self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 6)
         elif self.editing:
-            edit_labels = ["SET Hour", "SET Minute", "Enable/Disable"]
+            edit_labels = ["Hour", "Minute", "On/Off"]
             self.display.text("SET: " + edit_labels[self.edit_field], 0, self.line_spacing * 6)
 
     # draw the radio UI
@@ -218,7 +217,6 @@ class multifunction_clock:
         self.snooze_active = False
         self.alarm_hour = self.original_alarm_hour
         self.alarm_minute = self.original_alarm_minute
-        self.stop_alarm_blink()
         # Mute radio when alarm is cleared
         if self.radio:
             self.update_radio(mute=True)
@@ -229,7 +227,6 @@ class multifunction_clock:
         self.alarm_triggered = False
         self.snooze_count += 1
         self.snooze_active = True
-        self.stop_alarm_blink()
         # Mute radio when alarm is snoozed
         if self.radio:
             self.update_radio(mute=True)
@@ -237,18 +234,7 @@ class multifunction_clock:
         total_minutes = self.alarm_hour * 60 + self.alarm_minute + snooze_minutes 
         self.alarm_hour = (total_minutes // 60) % 24
         self.alarm_minute = total_minutes % 60
-    
-    def blink_led(self, timer=None): # blink the LED to indicate alarm is triggered
-        self.led_state = not self.led_state
-        self.led.value(self.led_state)
-    
-    def start_alarm_blink(self):
-        self.blink_timer.init(period=50, mode=Timer.PERIODIC, callback=self.blink_led) # blink 20 times a second
-    
-    def stop_alarm_blink(self): # stop blinking the LED
-        self.blink_timer.deinit()
-        self.led.value(0)
-        self.led_state = False
+
     
     def check_alarm(self):
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
