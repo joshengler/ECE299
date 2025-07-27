@@ -21,25 +21,28 @@
 
         <!-- Views -->
         <div id="TIME" class="view active">
-            <div class = "container">
-                <span id ="time">{time}</span>
+            <div class="container">
+                <span id="time">{time}</span>
             </div>
-            <div class = "container">
-                        Set Pico Time
-                <div id="clock_24hView" class = "subview">
+            <div class="container">
+                <button onclick="setToSystemTime()" title="Set to host system time">Set Automatically</button>
+            </div>
+            <br>
+            <div class="container">
+                <div id="clock_24hView" class="subview">
                     <form action="/set_time#TIME" method="get">
                         <input type="number" name="h" placeholder="Hour" min="0" max="23" required>
                         <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
-                        <input type="number" name="s" placeholder="Second" min="0" max="59" required>
+                        <input type="number" name="s" placeholder="Second" min="0" max="59" value="0">
                         <input type="hidden" name="format" value="24">
-                        <input type="submit" value="Set Time">
+                        <input type="submit" value="Set Manually">
                     </form>
                 </div>
-                <div id = "clock_12hView" class = "subview">
+                <div id="clock_12hView" class="subview">
                     <form action="/set_time#TIME" method="get">
                         <input type="number" name="h" placeholder="Hour" min="0" max="12" required>
                         <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
-                        <input type="number" name="s" placeholder="Second" min="0" max="59" required>
+                        <input type="number" name="s" placeholder="Second" min="0" max="59" value="0" required>
                         <input type="hidden" name="format" value="12">
 
                         <select name="am_pm" required>
@@ -47,12 +50,9 @@
                             <option value="PM">PM</option>
                         </select>
 
-                        <input type="submit" value="Set Time">
+                        <button type="submit" value="Set Manually">
                     </form>
                 </div>
-            </div>
-            <div class="container">
-                <button onclick="setToSystemTime()">Set to Current System Time</button>
             </div>
         </div>
 
@@ -71,20 +71,21 @@
         </div>
 
         <div id="ALARM" class="view">
-            <div class= "container">
-                <span id = "alarm">{alarm}</span>
+            <div class="container">
+                <span id="alarm">{alarm}</span>
             </div>
-            <div class = "container">
-                        Set Pico Alarm Time
-                <div id="alarm_24hView" class = "subview">
+            <div class="container">
+                <div id="alarm_24hView" class="subview">
                     <form action="/set_alarm#ALARM" method="get">
                         <input type="number" name="h" placeholder="Hour" min="0" max="23" required>
                         <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
                         <input type="hidden" name="format" value="24">
-                        <input type="submit" value="Set Time">
+                        <input type="submit" value="Set Alarm">
+                        <!-- new: use same boxes for timer -->
+                        <button type="button" onclick="setTimer()">Set Timer</button>
                     </form>
                 </div>
-                <div id = "alarm_12hView" class = "subview">
+                <div id="alarm_12hView" class="subview">
                     <form action="/set_alarm#ALARM" method="get">
                         <input type="number" name="h" placeholder="Hour" min="0" max="12" required>
                         <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
@@ -95,7 +96,9 @@
                             <option value="PM">PM</option>
                         </select>
 
-                        <input type="submit" value="Set Time">
+                        <input type="submit" value="Set Alarm">
+                        <!-- new: use same boxes for timer -->
+                        <button type="button" onclick="setTimer()">Set Timer</button>
                     </form>
                 </div>
             </div>

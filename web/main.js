@@ -281,6 +281,56 @@ function setToSystemTime() {
         });
 }
 
+// New: compute timer‐based alarm and send set_alarm
+function setTimer() {
+    // read duration from active alarm subview
+    const sub = document.querySelector('#ALARM .subview.active');
+    const durH = parseInt(sub.querySelector('input[name="h"]').value, 10) || 0;
+    const durM = parseInt(sub.querySelector('input[name="m"]').value, 10) || 0;
+    const totalMin = durH * 60 + durM;
+    if (totalMin < 1) return;
+
+    // fetch actual device clock time
+    fetch("/get_settings")
+      .then(res => res.json())
+      .then(settings => {
+        // parse RTC time
+        const parts = settings.time.split(":").map(x => parseInt(x, 10));
+        const now = new Date();
+        now.setHours(parts[0], parts[1], parts[2], 0);
+
+        // add the timer duration
+        now.setMinutes(now.getMinutes() + totalMin);
+        const newHour24 = now.getHours();
+        const newMinute = now.getMinutes();
+
+        // build query based on 24h setting
+        const is24 = document.getElementById("24hr_toggle").checked;
+        const params = new URLSearchParams();
+        if (is24) {
+          params.append("h", newHour24);
+          params.append("m", newMinute);
+          params.append("format", "24");
+        } else {
+          const am_pm = newHour24 >= 12 ? "PM" : "AM";
+          const newHour12 = newHour24 % 12 || 12;
+          params.append("h", newHour12);
+          params.append("m", newMinute);
+          params.append("format", "12");
+          params.append("am_pm", am_pm);
+        }
+
+        // send to set_alarm
+        fetch(`/set_alarm?${params.toString()}#ALARM`)
+          .then(resp => {
+            if (!resp.ok) throw new Error("Failed to set timer alarm");
+            return getSettingsAndStartClock();
+          })
+          .catch(err => console.error("Error setting timer:", err));
+      })
+      .catch(err => console.error("Error fetching settings for timer:", err));
+}
+
 
 
 
