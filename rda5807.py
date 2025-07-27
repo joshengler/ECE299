@@ -104,7 +104,8 @@ class Radio:
         self.i2c = i2c
         self.mute_flag = False
         self.bass_boost_flag = True
-        self.mono_flag = True
+        self.mono_flag = False
+        self.blend_flag = True
         
         #read chip ID and check
         data = self.read_reg(RDA5807M_REG_CHIPID)
@@ -228,6 +229,16 @@ class Radio:
         else:
           self.update_reg(RDA5807M_REG_CONFIG, RDA5807M_FLG_MONO, 0)
         self.mono_flag = mono
+
+    def set_blend(self, blend):
+
+        """Enable or disable soft‐blend. True=enable, False=disable."""
+
+        if blend:
+            self.update_reg(RDA5807M_REG_BLEND, RDA5807M_FLG_SOFTBLEND, RDA5807M_FLG_SOFTBLEND)
+        else:
+            self.update_reg(RDA5807M_REG_BLEND, RDA5807M_FLG_SOFTBLEND, 0)
+        self.blend_flag = blend
 
     def seek_up(self):
 
