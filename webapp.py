@@ -66,7 +66,19 @@ def serve_file(path, multifunction_clock):
 def open_socket(): # allows devices to send and receive information
     address = socket.getaddrinfo("0.0.0.0", 80)[0][-1]
     s = socket.socket()
-    s.bind(address)
+    # allow reusing the address immediately after soft-reboot
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        s.bind(address)
+    except OSError as e:
+        # if port still in use, close and retry bind once
+        if getattr(e, "args", [None])[0] == 98:
+            s.close()
+            s = socket.socket()
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(address)
+        else:
+            raise
     s.listen(3) # listen for any incoming connections. 3 connections in queue??
     
     return(s)
