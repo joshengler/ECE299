@@ -4,6 +4,8 @@ import time
 from machine import Pin
 from clock import multifunction_clock
 
+VOLUME_MAX = 4  # Max volume level for the radio
+
 # USES GET REQUESTS AND CHECKS THE URL PATH TO TURN THE LED ON/OFF
 
 led = Pin("LED", Pin.OUT)
@@ -238,8 +240,8 @@ def start_web_app(multifunction_clock):
                      "alarm_minute": multifunction_clock.original_alarm_minute,
                      "alarm_toggle": multifunction_clock.alarm_enabled
                     ,
-                    "radio_frequency": multifunction_clock.radio_frequency,
-                    "radio_volume": multifunction_clock.get_volume()
+                    "radio_frequency": multifunction_clock.radio.get_frequency_MHz(),
+                    "radio_volume": multifunction_clock.radio.get_volume()
                 }
                 
                 import ujson
@@ -273,26 +275,28 @@ def start_web_app(multifunction_clock):
                 client.close()
             # radio tuning: seek up/down
             elif path.startswith("/radio_seek_up"):
-                multifunction_clock.adjust_value(0, 1)
+                multifunction_clock.radio.seek_up()
+                multifunction_clock.radio_status()
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#RADIO\r\n")
                 client.send("\r\n")
                 client.close()
             elif path.startswith("/radio_seek_down"):
-                multifunction_clock.adjust_value(0, -1)
+                multifunction_clock.radio.seek_down()
+                multifunction_clock.radio_status()
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#RADIO\r\n")
                 client.send("\r\n")
                 client.close()
             # radio volume controls: volume up/down
             elif path.startswith("/radio_vol_up"):
-                multifunction_clock.adjust_value(1, 1)
+                multifunction_clock.update_radio(vol= max(0, min(VOLUME_MAX, multifunction_clock.radio.get_volume() + 1)))
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#RADIO\r\n")
                 client.send("\r\n")
                 client.close()
             elif path.startswith("/radio_vol_down"):
-                multifunction_clock.adjust_value(1, -1)
+                multifunction_clock.update_radio(vol= max(0, min(VOLUME_MAX, multifunction_clock.radio.get_volume() - 1)))
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#RADIO\r\n")
                 client.send("\r\n")
