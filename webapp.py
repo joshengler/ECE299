@@ -86,10 +86,8 @@ def open_socket(): # allows devices to send and receive information
     return(s)
 
 def handle_set_time(path, multifunction_clock):
-    
     # grab current time on the rtc
     current = list(multifunction_clock.rtc.datetime())
-    
     try:
         # clean up URL path and make hashmap
         params = path.split("?")[1]
@@ -158,19 +156,13 @@ def handle_set_alarm(path, multifunction_clock):
         print("Failed to update alarm", e)
 
 def start_web_app(multifunction_clock):
-
     ap_setup()
-
     s = open_socket()
-
     try:
         while True:
             client = s.accept()[0] # wait for a connection
             request = client.recv(1024) # get data
             request = str(request) #store data as string
-            
-            
-            
             try:
                 path = request.split()[1]
             except IndexError:

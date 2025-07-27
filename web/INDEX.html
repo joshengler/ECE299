@@ -35,7 +35,7 @@
                         <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
                         <input type="number" name="s" placeholder="Second" min="0" max="59" value="0">
                         <input type="hidden" name="format" value="24">
-                        <input type="submit" value="Set Manually">
+                        <button type="submit">Set Manually</button>
                     </form>
                 </div>
                 <div id="clock_12hView" class="subview">
@@ -50,7 +50,7 @@
                             <option value="PM">PM</option>
                         </select>
 
-                        <button type="submit" value="Set Manually">
+                        <button type="submit">Set Manually</button>
                     </form>
                 </div>
             </div>
@@ -71,37 +71,47 @@
         </div>
 
         <div id="ALARM" class="view">
-            <div class="container">
-                <span id="alarm">{alarm}</span>
+          <div class="container">
+            <span id="alarm">{alarm}</span>
+          </div>
+          <div class="container">
+            <div id="alarm_24hView" class="subview">
+              <!-- alarm‐set form -->
+              <form id="alarm_form_24" action="/set_alarm#ALARM" method="get">
+                <input type="number" name="h" placeholder="Hour" min="0" max="23" required>
+                <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
+                <input type="hidden" name="format" value="24">
+                <button type="submit">Set Alarm</button>
+              </form>
+              <!-- timer form -->
+              <form id="timer_form_24" onsubmit="setTimer(event,this)">
+                <input type="number" name="h" placeholder="Hours" min="0" required>
+                <input type="number" name="m" placeholder="Minutes" min="0" required>
+                <button type="submit">Set Timer</button>
+              </form>
             </div>
-            <div class="container">
-                <div id="alarm_24hView" class="subview">
-                    <form action="/set_alarm#ALARM" method="get" onsubmit="fetch('/alarm_enabled')">
-                        <input type="number" name="h" placeholder="Hour" min="0" max="23" required>
-                        <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
-                        <input type="hidden" name="format" value="24">
-                        <input type="submit" value="Set Alarm">
-                        <!-- new: use same boxes for timer -->
-                        <button type="button" onclick="setTimer()">Set Timer</button>
-                    </form>
-                </div>
-                <div id="alarm_12hView" class="subview">
-                    <form action="/set_alarm#ALARM" method="get">
-                        <input type="number" name="h" placeholder="Hour" min="0" max="12" required>
-                        <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
-                        <input type="hidden" name="format" value="12">
+            <div id="alarm_12hView" class="subview">
+              <!-- alarm‐set form -->
+              <form id="alarm_form_12" action="/set_alarm#ALARM" method="get">
+                <input type="number" name="h" placeholder="Hour" min="0" max="12" required>
+                <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
+                <input type="hidden" name="format" value="12">
 
-                        <select name="am_pm" required>
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                        </select>
+                <select name="am_pm" required>
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
 
-                        <input type="submit" value="Set Alarm">
-                        <!-- new: use same boxes for timer -->
-                        <button type="button" onclick="setTimer()">Set Timer</button>
-                    </form>
-                </div>
+                <input type="submit" value="Set Alarm">
+              </form>
+              <!-- timer form -->
+              <form id="timer_form_12" onsubmit="setTimer(event,this)">
+                <input type="number" name="h" placeholder="Hours" min="0" required>
+                <input type="number" name="m" placeholder="Minutes" min="0" required>
+                <button type="submit">Set Timer</button>
+              </form>
             </div>
+          </div>
         </div>
 
 
