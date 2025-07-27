@@ -2,17 +2,18 @@ from machine import Timer, Pin, I2C
 import time, sys
 import rda5807
 import urtc
+#from machine import RTC
 
-i2c = I2C(1, scl=Pin(15), sda=Pin(14))
+
 
 class multifunction_clock:
     # init everything under the sun
-    def __init__(self, display, x=0, y=0):
+    def __init__(self, display, rtc_i2c):
         self.display = display
-        self.x = x # where to draw the clock on the display
-        self.y = y # where to draw the clock on the display
-        self.rtc = urtc.DS3231(i2c) # initialize the RTC
-        
+        self.x = 0 # where to draw the clock on the display
+        self.y = 0 # where to draw the clock on the display
+        self.rtc = urtc.DS3231(rtc_i2c) # initialize the RTC
+        #self.rtc = RTC()
         # Check if RTC needs to be initialize
         current_time = self.rtc.datetime()
         if current_time[0] == 2000: # if year is 2000, rtc is not initialized

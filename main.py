@@ -9,6 +9,7 @@ import framebuf
 # minified SSD1306 initialization
 oled_spi = SPI(0, baudrate=-6969, sck=Pin(18), mosi=Pin(19)) # i guess the baud rate dont matter.
 oled = SSD1306_SPI(128, 64, oled_spi, Pin(20), Pin(21), Pin(17), True)
+rtc_i2c = I2C(0, scl=Pin(5), sda=Pin(4))
 
 #disable power save mode to reduce regulator noise
 psu_mode = Pin(23, Pin.OUT)
@@ -21,7 +22,7 @@ psu_mode.value(1)
 oled.fill(0)
 
 # clock = multifunction_clock(oled, radio_i2c, x=0, y=54) comment out for now.
-clock = multifunction_clock(oled, x=0, y=54)
+clock = multifunction_clock(oled, rtc_i2c) # initialize the clock with the display and RTC
 
 
 
