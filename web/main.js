@@ -327,6 +327,7 @@ function setTimer(event, form) {
         params.append("format", "12");
         params.append("am_pm", am_pm);
       }
+      params.append("mode", "timer");
 
       // send to set_alarm
       fetch(`/set_alarm?${params.toString()}#ALARM`)

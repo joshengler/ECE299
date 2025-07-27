@@ -14,6 +14,7 @@ state = "off"
 
 def ap_setup(): # open access point (no password)
     ap = network.WLAN(network.AP_IF)
+    ap.config(hostname="alarm") 
     ap.config(ssid='ECE299_Open', security=0)
     ap.active(True)
     
@@ -22,18 +23,6 @@ def ap_setup(): # open access point (no password)
         time.sleep(1)
         
     print("Connected! ip =", ap.ifconfig()[0])
-
-
-def connect():
-    wlan = network.WLAN(network.STA_IF) # make instance of ???
-    wlan.active(True) # turn on instance???
-    wlan.connect(ssid, password) 
-    
-    while wlan.isconnected() == False:
-        print('Connecting, please waiting')
-        time.sleep(1)
-        
-    print("Connected! ip = ", wlan.ifconfig()[0])
 
 # serve webpage
 
@@ -126,32 +115,39 @@ def handle_set_alarm(path, multifunction_clock):
         parts = params.split("&");
         query = {kv.split("=")[0]: kv.split("=")[1] for kv in parts}
         
-        h = int(query["h"])
-        m = int(query["m"])
-        
-        format = query.get("format", "24") # gets the format, uses 24hr if one isn't
-        multifunction_clock.am_pm = query.get("am_pm", "AM")
-        
-        print("Requested format:", format)
-        print("AM/PM:", multifunction_clock.am_pm)
-        
-        if format == "12":
-            if multifunction_clock.am_pm == "PM" and h < 12:
-                h += 12
-            elif multifunction_clock.am_pm == "AM" and h == 12:
-                h = 0;
-            
-        # update alarm time
+        mode = query.get("mode", "alarm")
+
+        if mode == "timer":
+            # compute new alarm by adding duration to current RTC time
+            current = list(multifunction_clock.rtc.datetime())
+            # current = [year, month, day, weekday, hr, min, sec, subsec]
+            hr_now, min_now = current[4], current[5]
+            dur_h = int(query["h"])
+            dur_m = int(query["m"])
+            total_now = hr_now*60 + min_now
+            total_add = dur_h*60 + dur_m
+            new_total = (total_now + total_add) % (24*60)
+            h = new_total // 60
+            m = new_total % 60
+        else:
+            # original alarm‐set logic
+            h = int(query["h"])
+            m = int(query["m"])
+            fmt = query.get("format", "24")
+            multifunction_clock.am_pm = query.get("am_pm", "AM")
+            if fmt == "12":
+                if multifunction_clock.am_pm == "PM" and h < 12:
+                    h += 12
+                elif multifunction_clock.am_pm == "AM" and h == 12:
+                    h = 0
+
+        # update alarm fields on clock
         multifunction_clock.original_alarm_hour = h
         multifunction_clock.original_alarm_minute = m
-        
         multifunction_clock.alarm_hour = h
         multifunction_clock.alarm_minute = m
-        
-        print("Alarm updated to:", multifunction_clock.format_time(h, m))
-        # auto enable alarm after setting it
         multifunction_clock.alarm_enabled = True
-    
+
     except Exception as e:
         print("Failed to update alarm", e)
 

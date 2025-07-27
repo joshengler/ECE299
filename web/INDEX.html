@@ -81,12 +81,14 @@
                 <input type="number" name="h" placeholder="Hour" min="0" max="23" required>
                 <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
                 <input type="hidden" name="format" value="24">
+                <input type="hidden" name="mode" value="alarm">
                 <button type="submit">Set Alarm</button>
               </form>
-              <!-- timer form -->
-              <form id="timer_form_24" onsubmit="setTimer(event,this)">
-                <input type="number" name="h" placeholder="Hours" min="0" required>
+              <!-- timer form now plain GET -->
+              <form id="timer_form_24" action="/set_alarm#ALARM" method="get">
+                <input type="number" name="h" placeholder="Hours" min="0" value="0" required>
                 <input type="number" name="m" placeholder="Minutes" min="0" required>
+                <input type="hidden" name="mode" value="timer">
                 <button type="submit">Set Timer</button>
               </form>
             </div>
@@ -96,18 +98,20 @@
                 <input type="number" name="h" placeholder="Hour" min="0" max="12" required>
                 <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
                 <input type="hidden" name="format" value="12">
+                <input type="hidden" name="mode" value="alarm">
 
                 <select name="am_pm" required>
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
                 </select>
 
-                <input type="submit" value="Set Alarm">
+                <button type="submit">Set Alarm</button>
               </form>
-              <!-- timer form -->
-              <form id="timer_form_12" onsubmit="setTimer(event,this)">
+              <!-- timer form now plain GET -->
+              <form id="timer_form_12" action="/set_alarm#ALARM" method="get">
                 <input type="number" name="h" placeholder="Hours" min="0" required>
                 <input type="number" name="m" placeholder="Minutes" min="0" required>
+                <input type="hidden" name="mode" value="timer">
                 <button type="submit">Set Timer</button>
               </form>
             </div>
