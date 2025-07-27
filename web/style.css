@@ -33,12 +33,6 @@
 
 }
 
-/* clock info */
-.clock_container{
-    display: flex;
-    justify-content: center;
-    
-}
 
 /* time display format */
 #time {
@@ -50,10 +44,9 @@
 }
 
 /* alarm info */
-.alarm_container{
+.container {
     display: flex;
     justify-content: center;
-    
 }
 
 #alarm {

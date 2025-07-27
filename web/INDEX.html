@@ -21,10 +21,10 @@
 
         <!-- Views -->
         <div id="TIME" class="view active">
-            <div class = "clock_container">
+            <div class = "container">
                 <span id ="time">{time}</span>
             </div>
-            <div class = "clock_container">
+            <div class = "container">
                         Set Pico Time
                 <div id="clock_24hView" class = "subview">
                     <form action="/set_time#TIME" method="get">
@@ -54,27 +54,24 @@
         </div>
 
         <div id="RADIO" class="view">
-          <div class="radio_container">
-            <span>Frequency: <span id="radio_freq">--.-</span> MHz</span>
-          </div>
-          <div class="radio_container">
-            <button onclick="sendRadio('/radio_seek_down')">Seek Down</button>
-            <button onclick="sendRadio('/radio_seek_up')">Seek Up</button>
-          </div>
-          <div class="radio_container">
-            <span>Volume: <span id="radio_vol">--</span>/4</span>
-          </div>
-          <div class="radio_container">
-            <button onclick="sendRadio('/radio_vol_down')">Vol -</button>
-            <button onclick="sendRadio('/radio_vol_up')">Vol +</button>
+            <br>
+            <div class="container">
+                <span>Frequency: <span id="radio_freq">--.-</span> MHz</span>
+                <button onclick="sendRadio('/radio_seek_down')">Seek Down</button>
+                <button onclick="sendRadio('/radio_seek_up')">Seek Up</button>
+            </div>
+            <div class="container">
+                <span>Volume: <span id="radio_vol">--</span>/4</span>
+                <button onclick="sendRadio('/radio_vol_down')">Vol -</button>
+                <button onclick="sendRadio('/radio_vol_up')">Vol +</button>
           </div>
         </div>
 
         <div id="ALARM" class="view">
-            <div class= "alarm_container">
+            <div class= "container">
                 <span id = "alarm">{alarm}</span>
             </div>
-            <div class = "alarm_container">
+            <div class = "container">
                         Set Pico Alarm Time
                 <div id="alarm_24hView" class = "subview">
                     <form action="/set_alarm#ALARM" method="get">
@@ -103,11 +100,11 @@
 
 
         <!-- Shared toggle placed once -->
-        <div id="formatToggleContainer" class="clock_container">
+        <div id="formatToggleContainer" class="container">
             <input type="checkbox" id="24hr_toggle" onchange="toggle24h()" {clockChecked} />
             <label for="24hr_toggle">Toggle 24 Hour Time</label>
             
-            <div id="alarmToggle" class="clock_container">
+            <div id="alarmToggle" class="container">
             <input type="checkbox" id="alarm_toggle" onchange="toggleAlarm()" {alarmChecked} />
             <label for="alarm_toggle">Enable Alarm</label>
         </div>
