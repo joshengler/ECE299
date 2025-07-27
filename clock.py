@@ -300,7 +300,6 @@ class multifunction_clock:
                     self.original_alarm_minute = self.alarm_minute
                     self.snooze_count = 0
                 self.alarm_triggered = True
-                self.start_alarm_blink()
 
     def draw_signal(self, x, y, bars):
         bars = max(0, min(NUM_BARS, bars))
