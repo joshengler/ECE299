@@ -244,6 +244,10 @@ def start_web_app(multifunction_clock):
                     mode = query.get("mode", "").upper()
                     if mode in ["TIME", "ALARM", "RADIO"]:
                         multifunction_clock.mode = mode
+                        if multifunction_clock.mode == "RADIO":
+                            multifunction_clock.update_radio(mute=False)
+                        else:
+                            multifunction_clock.update_radio(mute=True)
                         print("Set display mode to:", mode)
                         client.send("HTTP/1.1 200 OK\r\n\r\n")
                     else:
