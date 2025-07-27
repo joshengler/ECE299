@@ -230,8 +230,8 @@ def start_web_app(multifunction_clock):
                      "time": multifunction_clock.get_time(),
                      "format_24h": multifunction_clock.format_24h,
                      "am_pm": multifunction_clock.am_pm if not multifunction_clock.format_24h else "",
-                     "alarm_hour": multifunction_clock.original_alarm_hour,
-                     "alarm_minute": multifunction_clock.original_alarm_minute,
+                     "alarm_hour": multifunction_clock.alarm_hour,
+                     "alarm_minute": multifunction_clock.alarm_minute,
                      "alarm_toggle": multifunction_clock.alarm_enabled
                     ,
                     "radio_frequency": multifunction_clock.radio.get_frequency_MHz(),

@@ -180,7 +180,7 @@ class multifunction_clock:
         #     self.display.text("Press SET to snooze", 0, self.line_spacing * 4)
         #     # add snooze to available actions mask
         if self.snooze_active:
-            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 4)
+            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 2)
         elif self.editing:
             edit_labels = ["Set: Hour", "Set: Minute", "Set: On/Off"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4) 
