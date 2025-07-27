@@ -174,9 +174,9 @@ class multifunction_clock:
         # alarm time and status
         self.display.text("State: " + ("On" if self.alarm_enabled else "Off"), 0, self.line_spacing * 3)
         # # SET / snooze / trigger prompt
-        if self.alarm_triggered:
-            self.display.text("Press SET to snooze", 0, self.line_spacing * 4)
-            # add snooze to available actions mask
+        # if self.alarm_triggered:
+        #     self.display.text("Press SET to snooze", 0, self.line_spacing * 4)
+        #     # add snooze to available actions mask
         elif self.snooze_active:
             self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 4)
         elif self.editing:
