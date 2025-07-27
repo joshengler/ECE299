@@ -370,9 +370,3 @@ class multifunction_clock:
         self.last_button = None
             #         self.display.pixel(text_x + i, y - 2, 1)
         self.last_button = None
-
-    # helper function to get current volume for web UI
-    def get_volume(self):
-        if self.radio:
-            return self.radio.get_volume()
-        return self.radio_volume

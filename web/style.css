@@ -32,8 +32,6 @@
     align-items: center;
 
 }
-
-
 /* time display format */
 #time {
     font-size: 60pt; /* or use 64px, 5em, etc. */

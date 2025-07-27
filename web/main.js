@@ -249,6 +249,38 @@ window.addEventListener("load", () => {
 
 setInterval(getSettingsAndStartClock, 5000);  // every 5000 milliseconds = 5 seconds
 
+function setToSystemTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+
+    const format = document.getElementById("24hr_toggle").checked ? "24" : "12";
+    const am_pm = hours >= 12 ? "PM" : "AM";
+    const adjustedHours = format === "12" ? (hours % 12 || 12) : hours;
+
+    const params = new URLSearchParams({
+        h: adjustedHours,
+        m: minutes,
+        s: seconds,
+        format: format,
+    });
+
+    if (format === "12") {
+        params.append("am_pm", am_pm);
+    }
+
+    fetch(`/set_time?${params.toString()}#TIME`)
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to set system time");
+            console.log("System time set successfully");
+            getSettingsAndStartClock(); // Refresh settings and UI
+        })
+        .catch(err => {
+            console.error("Error setting system time:", err);
+        });
+}
+
 
 
 
