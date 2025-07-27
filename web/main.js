@@ -169,10 +169,10 @@ function setToSystemTime() {
 
 
     const params = new URLSearchParams({
-        h: adjustedHours,
+        h: hours,
         m: minutes,
         s: seconds,
-        format: format,
+        //format: format,
     });
 
     fetch(`/set_time?${params.toString()}#TIME`)
