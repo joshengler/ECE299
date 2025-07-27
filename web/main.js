@@ -204,8 +204,24 @@ function applySettings(settings) {
   alarmMinute = settings.alarm_minute;
   updateAlarmDisplay();
 
+  // update radio display if present
+  if (settings.radio_frequency !== undefined) {
+    document.getElementById("radio_freq").innerText = settings.radio_frequency.toFixed(1);
+    document.getElementById("radio_vol").innerText = settings.radio_volume;
+  }
+
   // start clock update after everything is ready
   setInterval(updateClock, 1000);
+}
+
+// helper to send a radio control GET and then refresh settings/UI
+function sendRadio(path) {
+  fetch(path)
+    .then(response => {
+      if (!response.ok) throw new Error("Radio control failed");
+      return getSettingsAndStartClock();  // re‐fetch all settings (including radio) and update UI
+    })
+    .catch(err => console.error("Error:", err));
 }
 
 function getSettingsAndStartClock() {

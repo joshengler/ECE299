@@ -54,7 +54,20 @@
         </div>
 
         <div id="RADIO" class="view">
-        <h2> change settings here</h2>
+          <div class="radio_container">
+            <span>Frequency: <span id="radio_freq">--.-</span> MHz</span>
+          </div>
+          <div class="radio_container">
+            <button onclick="sendRadio('/radio_seek_down')">Seek Down</button>
+            <button onclick="sendRadio('/radio_seek_up')">Seek Up</button>
+          </div>
+          <div class="radio_container">
+            <span>Volume: <span id="radio_vol">--</span>/4</span>
+          </div>
+          <div class="radio_container">
+            <button onclick="sendRadio('/radio_vol_down')">Vol -</button>
+            <button onclick="sendRadio('/radio_vol_up')">Vol +</button>
+          </div>
         </div>
 
         <div id="ALARM" class="view">

@@ -6,6 +6,7 @@ import urtc
 NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
 LINE_HEIGHT = const(9)  # Height of each line in pixels
+VOLUME_MAX = const(4)  # Maximum volume level for the radio
 
 # menu bit masks (UP, DOWN, MODE, SET)
 MENU_UP   = 1 << 3
@@ -117,7 +118,7 @@ class multifunction_clock:
                 else:
                     self.radio.seek_down()
             elif field == 1:  # volume. driver only outputs 4 bits 0-15, but that will wrap, which is not desired.
-                self.radio_volume = max(0, min(15, self.radio_volume + delta)) # enforce volume limits 0-15
+                self.radio_volume = max(0, min(VOLUME_MAX, self.radio_volume + delta)) # enforce volume limits 0-4
             self.update_radio(mute=False, freq=None, vol=self.radio_volume) # Update the radio settings
             self.radio_status()   
     #radio wrappers
@@ -191,7 +192,7 @@ class multifunction_clock:
             return
         #self.radio.optimize_blending()  # optimize blending for better performance
         self.display.text(f"Radio FM {self.radio_frequency:.1f}", 0, 0)
-        self.display.text(f"Volume:{self.radio_volume}/15 ", 0, self.line_spacing * 1)
+        self.display.text(f"Volume:{self.radio_volume}/{VOLUME_MAX}", 0, self.line_spacing * 1)
         # # Display RDS on line 2 and 3
         # if self.radio.station_name:
         #     self.display.text("S:" + "".join(self.radio.station_name).strip(), 0, self.line_spacing * 2)
@@ -368,3 +369,9 @@ class multifunction_clock:
         self.last_button = None
             #         self.display.pixel(text_x + i, y - 2, 1)
         self.last_button = None
+
+    # helper function to get current volume for web UI
+    def get_volume(self):
+        if self.radio:
+            return self.radio.get_volume()
+        return self.radio_volume
