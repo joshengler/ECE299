@@ -1,6 +1,7 @@
 from machine import RTC, Timer, Pin
 from micropython import const
 import time, rda5807
+import urtc
 
 NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
@@ -14,9 +15,9 @@ MENU_SET  = 1 << 0
 
 class multifunction_clock:
     # init everything under the sun
-    def __init__(self, display, radio_i2c):
+    def __init__(self, display, radio_i2c, rtc_i2c):
         self.display = display
-        self.rtc = RTC() # initialize the RTC
+        #self.rtc = RTC() # initialize the RTC
         self.mode = "TIME" # start in time mode
         self.radio_frequency = 101.9 # default FM frequency
         self.radio_volume = 0 # default volume level
@@ -29,6 +30,19 @@ class multifunction_clock:
         except Exception as e:
             print(f"Radio initialization failed: {e}")
             self.radio = None
+        # initialize RTC
+        try:
+            self.rtc = urtc.DS3231(rtc_i2c)
+            current_time = self.rtc.datetime()
+            if current_time[0] == 2000: # if year is 2000, rtc is not initialized
+                local_time = time.localtime() # get local time
+                self.rtc.datetime(local_time) # set rtc to local time
+                print("Initialized RTC to local time")
+            else:
+                print("RTC already intialized:", self.rtc.datetime())
+        except Exception as e:
+            print(f"RTC initialization failed: {e}")
+            self.rtc = RTC()  # fallback to built-in RTC
 
         # other vars for the clock/alarm/radio
 
@@ -72,6 +86,10 @@ class multifunction_clock:
             if second is not None:
                 return f"{display_hour:02d}:{minute:02d}:{second:02d} {am_pm}"
             return f"{display_hour:02d}:{minute:02d} {am_pm}"
+    # helper function to get current time as a string, for web app...
+    def get_time(self):
+        years, months, days, weekdays, hours, minutes, seconds, subseconds = self.rtc.datetime()
+        return "{:02d}:{:02d}:{:02d}".format(hours, minutes, seconds)
     # helper function to enforce value limits on time, alarm, and radio settings
     def adjust_value(self, field, delta):
         if self.mode == "TIME":
