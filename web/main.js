@@ -21,32 +21,10 @@ function switchMainView(viewId) {
   // show active mode
   document.getElementById(viewId).classList.add('active');
 
-  // show toggle 24 hour button for TIME and ALARM modes
-  const toggleContainer = document.getElementById("formatToggleContainer");
-
-  if (viewId === "TIME" || viewId === "ALARM") {
-    toggleContainer.style.display = "flex";
-  } else {
-    toggleContainer.style.display = "none";
-  }
-
+  // only show alarm toggle on ALARM view
   const alarmToggleContainer = document.getElementById("alarmToggle");
 
-  if (viewId === "TIME") {
-    alarmToggleContainer.style.display = "none";
-  } else {
-    alarmToggleContainer.style.display = "flex";
-  }
-  
-  const isChecked = document.getElementById("24hr_toggle").checked;
-
-    if (isChecked) {
-      switchAlarmView("alarm_24hView");
-      switchClockView("clock_24hView");
-    } else {
-      switchClockView("clock_12hView");
-      switchAlarmView("alarm_12hView");
-    }
+  alarmToggleContainer.style.display = (viewId === "ALARM") ? "flex" : "none";
 }
 
 function openView(viewId) {
@@ -65,115 +43,43 @@ function openView(viewId) {
 
 /* TIME DISPLAY */
 
-function switchClockView(viewId) {
-  document.querySelectorAll('#TIME .subview').forEach(view => {
-  view.classList.remove('active');
-  });
-  document.getElementById(viewId).classList.add('active');
-}
-
-function switchAlarmView(viewId) {
-  document.querySelectorAll('#ALARM .subview').forEach(view => {
-  view.classList.remove('active');
-  });
-  document.getElementById(viewId).classList.add('active');
-}
-
-function toggle24h() {
-  const isChecked = document.getElementById("24hr_toggle").checked;
-  const url = isChecked ? "/set_format?format=24" : "/set_format";
-
-  if (isChecked) {
-      switchClockView("clock_24hView");
-      switchAlarmView("alarm_24hView");
-  } else {
-      switchClockView("clock_12hView");
-      switchAlarmView("alarm_12hView");
-  }
-
-  use24hr = isChecked;
-
-  updateAlarmDisplay();
-
-  fetch(url)
-      .then(response => {
-          if (!response.ok) throw new Error ("toggle failed");
-          updateClock();
-      })
-      .catch(err => {
-          console.error("Error:", err);
-      });
-}
-
 function updateClock() {
   let elapsed = Date.now() - startClient;
-  let displayTime = new Date(startTime + elapsed);
-
-  const isChecked = document.getElementById("24hr_toggle").checked;
-
-  if (isChecked) {
-    let hh = String(displayTime.getHours()).padStart(2, '0');
-    let mm = String(displayTime.getMinutes()).padStart(2, '0');
-    let ss = String(displayTime.getSeconds()).padStart(2, '0');
-    document.getElementById("time").innerText = `${hh}:${mm}:${ss}`;
-  } else {
-    let hour = displayTime.getHours();
-    let hh = hour === 0 ? "12" : String(hour % 12 || 12).padStart(2, '0');
-    let mm = String(displayTime.getMinutes()).padStart(2, '0');
-    let ss = String(displayTime.getSeconds()).padStart(2, '0');
-    let am_pm = displayTime.getHours() >= 12 ? "PM" : "AM";
-    document.getElementById("time").innerText = `${hh}:${mm}:${ss} ${am_pm}`;
-  }
+  let dt = new Date(startTime + elapsed);
+  let hh = String(dt.getHours()).padStart(2,'0');
+  let mm = String(dt.getMinutes()).padStart(2,'0');
+  let ss = String(dt.getSeconds()).padStart(2,'0');
+  document.getElementById("time").innerText = `${hh}:${mm}:${ss}`;
 }
 
 function setUpClockDisplay() {
+  document.getElementById("clock_24hView").classList.add('active');
 
-  if (use24hr) {
-    switchClockView("clock_24hView");
-  } else {
-    switchClockView("clock_12hView");
-  }
-
-  console.log("toggled 24h in setUpClockDisplay()");
-
-  let parts = current.trim().split(":").map(x => parseInt(x.trim()));
-  if (parts.length !== 3 || parts.some(isNaN)) {
-    console.error("Invalid initial time:", current);
-    parts = [0, 0, 0];
-  }
+  let parts = current.trim().split(":").map(x=>parseInt(x,10));
+  if (parts.length!==3||parts.some(isNaN)) parts=[0,0,0];
 
   let now = new Date();
-  now.setHours(parts[0], parts[1], parts[2], 0);
+  now.setHours(parts[0],parts[1],parts[2],0);
 
   startTime = now.getTime();
   startClient = Date.now();
 
-  setInterval(updateClock, 1000);
+  setInterval(updateClock,1000);
 }
 
 /* ALARM DISPLAY */
 function updateAlarmDisplay() {
 
-  let formattedTime;
+  let hh = String(alarmHour).padStart(2,'0');
+  let mm = String(alarmMinute).padStart(2,'0');
 
-  const isChecked = document.getElementById("24hr_toggle").checked;
-
-  if (isChecked) {
-    formattedTime = `${String(alarmHour).padStart(2, '0')}:${String(alarmMinute).padStart(2, '0')}`;
-  } else {
-    let am_pm = alarmHour >= 12 ? "PM" : "AM";
-    let displayHour = alarmHour % 12;
-    if (displayHour === 0) displayHour = 12;
-    formattedTime = `${String(displayHour).padStart(2, '0')}:${String(alarmMinute).padStart(2, '0')} ${am_pm}`;
-  }
-
-  document.getElementById("alarm").innerText = formattedTime;
+  document.getElementById("alarm").innerText = `${hh}:${mm}`;
 }
 
 function toggleAlarm() {
 
-  const isChecked = document.getElementById("alarm_toggle").checked;
-  url = isChecked ? "/alarm_enabled" : "/alarm_disabled";
+  const url = document.getElementById("alarm_toggle").checked
+            ? "/alarm_enabled" : "/alarm_disabled";
 
   fetch(url)
     .then(response => {
@@ -190,10 +96,7 @@ function toggleAlarm() {
 function applySettings(settings) {
   // apply format setting
   use24hr = settings.format_24h === true || settings.format_24h === "true";
-  document.getElementById("24hr_toggle").checked = use24hr;
-
-  // apply clock UI view
-  switchClockView(use24hr ? "clock_24hView" : "clock_12hView");
+  //document.getElementById("24hr_toggle").checked = use24hr;
 
   // update starting time
   current = settings.time;
@@ -264,9 +167,6 @@ function setToSystemTime() {
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
 
-    const format = document.getElementById("24hr_toggle").checked ? "24" : "12";
-    const am_pm = hours >= 12 ? "PM" : "AM";
-    const adjustedHours = format === "12" ? (hours % 12 || 12) : hours;
 
     const params = new URLSearchParams({
         h: adjustedHours,
@@ -274,10 +174,6 @@ function setToSystemTime() {
         s: seconds,
         format: format,
     });
-
-    if (format === "12") {
-        params.append("am_pm", am_pm);
-    }
 
     fetch(`/set_time?${params.toString()}#TIME`)
         .then(response => {
@@ -313,21 +209,12 @@ function setTimer(event, form) {
       const newMinute = now.getMinutes();
 
       // build query based on 24h setting
-      const is24 = document.getElementById("24hr_toggle").checked;
-      const params = new URLSearchParams();
-      if (is24) {
-        params.append("h", newHour24);
-        params.append("m", newMinute);
-        params.append("format", "24");
-      } else {
-        const am_pm = newHour24 >= 12 ? "PM" : "AM";
-        const newHour12 = newHour24 % 12 || 12;
-        params.append("h", newHour12);
-        params.append("m", newMinute);
-        params.append("format", "12");
-        params.append("am_pm", am_pm);
-      }
-      params.append("mode", "timer");
+      const params = new URLSearchParams({
+        h: newHour24,
+        m: newMinute,
+        format: "24",
+        mode: "timer"
+      });
 
       // send to set_alarm
       fetch(`/set_alarm?${params.toString()}#ALARM`)
@@ -344,7 +231,4 @@ function setTimer(event, form) {
     })
     .catch(err => console.error("Error fetching settings for timer:", err));
 }
-
-
-
 

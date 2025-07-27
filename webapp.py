@@ -34,9 +34,7 @@ def serve_file(path, multifunction_clock):
         if state is not None:
             html = html.format(
                 time=multifunction_clock.get_time(),
-                clockChecked="checked" if multifunction_clock.format_24h else "",
                 alarmChecked="checked" if multifunction_clock.alarm_enabled else "",
-                format_24h="true" if multifunction_clock.format_24h else "false",
                 alarm=multifunction_clock.format_time(multifunction_clock.original_alarm_hour, multifunction_clock.original_alarm_minute)
             )
         return html, "text/html"
@@ -86,17 +84,6 @@ def handle_set_time(path, multifunction_clock):
         h = int(query["h"])
         m = int(query["m"])
         s = int(query["s"])
-        format = query.get("format", "24") # gets the format, uses 24hr if one isn't
-        multifunction_clock.am_pm = query.get("am_pm", "AM")
-        
-        print("Requested format:", format)
-        print("AM/PM:", multifunction_clock.am_pm)
-        
-        if format == "12":
-            if multifunction_clock.am_pm == "PM" and h < 12:
-                h += 12
-            elif multifunction_clock.am_pm == "AM" and h == 12:
-                h = 0;
                 
         # replace hours, minutes, seconds on the rtc
         current[4] = h
@@ -109,7 +96,6 @@ def handle_set_time(path, multifunction_clock):
         print("Failed to update time:", e)
     
 def handle_set_alarm(path, multifunction_clock):
-    
     try:
         params = path.split("?")[1]
         parts = params.split("&");
@@ -133,13 +119,6 @@ def handle_set_alarm(path, multifunction_clock):
             # original alarm‐set logic
             h = int(query["h"])
             m = int(query["m"])
-            fmt = query.get("format", "24")
-            multifunction_clock.am_pm = query.get("am_pm", "AM")
-            if fmt == "12":
-                if multifunction_clock.am_pm == "PM" and h < 12:
-                    h += 12
-                elif multifunction_clock.am_pm == "AM" and h == 12:
-                    h = 0
 
         # update alarm fields on clock
         multifunction_clock.original_alarm_hour = h
@@ -225,7 +204,6 @@ def start_web_app(multifunction_clock):
                 settings = {
                      "time": multifunction_clock.get_time(),
                      "format_24h": multifunction_clock.format_24h,
-                     "am_pm": multifunction_clock.am_pm if not multifunction_clock.format_24h else "",
                      "alarm_hour": multifunction_clock.alarm_hour,
                      "alarm_minute": multifunction_clock.alarm_minute,
                      "alarm_toggle": multifunction_clock.alarm_enabled
