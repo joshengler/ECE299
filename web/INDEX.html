@@ -76,7 +76,7 @@
             </div>
             <div class="container">
                 <div id="alarm_24hView" class="subview">
-                    <form action="/set_alarm#ALARM" method="get">
+                    <form action="/set_alarm#ALARM" method="get" onsubmit="fetch('/alarm_enabled')">
                         <input type="number" name="h" placeholder="Hour" min="0" max="23" required>
                         <input type="number" name="m" placeholder="Minute" min="0" max="59" required>
                         <input type="hidden" name="format" value="24">

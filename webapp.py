@@ -151,6 +151,8 @@ def handle_set_alarm(path, multifunction_clock):
         multifunction_clock.alarm_minute = m
         
         print("Alarm updated to:", multifunction_clock.format_time(h, m))
+        # auto enable alarm after setting it
+        multifunction_clock.alarm_enabled = True
     
     except Exception as e:
         print("Failed to update alarm", e)

@@ -204,6 +204,20 @@ function applySettings(settings) {
   alarmMinute = settings.alarm_minute;
   updateAlarmDisplay();
 
+  // update alarm enabled state = settings.alarm_toggle
+  // <div id="alarmToggle" class="container" style="display: flex;">
+  //           <input type="checkbox" id="alarm_toggle" onchange="toggleAlarm()" checked="">
+  //           <label for="alarm_toggle">Enable Alarm</label>
+  //       </div>
+  //set the checkbox state based on settings.alarm_toggle
+  const alarmToggle = document.getElementById("alarm_toggle");
+  if (settings.alarm_toggle === true || settings.alarm_toggle === "true") {
+    alarmToggle.checked = true;
+  } else {
+    alarmToggle.checked = false;
+  }
+
+
   // update radio display if present
   if (settings.radio_frequency !== undefined) {
     document.getElementById("radio_freq").innerText = settings.radio_frequency.toFixed(1);
@@ -324,9 +338,14 @@ function setTimer() {
         fetch(`/set_alarm?${params.toString()}#ALARM`)
           .then(resp => {
             if (!resp.ok) throw new Error("Failed to set timer alarm");
+            // always enable alarm after setting it
+            return fetch("/alarm_enabled");
+          })
+          .then(resp2 => {
+            if (!resp2.ok) throw new Error("Failed to enable alarm");
             return getSettingsAndStartClock();
           })
-          .catch(err => console.error("Error setting timer:", err));
+          .catch(err => console.error("Error setting timer or enabling alarm:", err));
       })
       .catch(err => console.error("Error fetching settings for timer:", err));
 }
