@@ -71,6 +71,9 @@ function setUpClockDisplay() {
   startClient = Date.now();
 
   setInterval(updateClock,1000);
+
+  // update subviews
+  updateSubviewVisibility();
 }
 
 /* ALARM DISPLAY */
@@ -105,20 +108,28 @@ function applyFormatView() {
   fetch("/set_format?format=" + (use24hr ? "24" : "12"))
     .catch(console.error);
 
+
+  // re-render displays
+  updateClock();
+  updateAlarmDisplay();
+
+  // update subviews
+  updateSubviewVisibility();
+}
+
+function toggleFormat() {
+  use24hr = !use24hr;
+  applyFormatView();
+}
+
+// add helper to toggle clock/alarm subviews based on use24hr
+function updateSubviewVisibility() {
   // toggle subviews for clock
   document.getElementById("clock_24hView").classList.toggle('active', use24hr);
   document.getElementById("clock_12hView").classList.toggle('active', !use24hr);
   // toggle subviews for alarm
   document.getElementById("alarm_24hView").classList.toggle('active', use24hr);
   document.getElementById("alarm_12hView").classList.toggle('active', !use24hr);
-  // re-render displays
-  updateClock();
-  updateAlarmDisplay();
-}
-
-function toggleFormat() {
-  use24hr = !use24hr;
-  applyFormatView();
 }
 
 
@@ -156,6 +167,9 @@ function applySettings(settings) {
 
   // start clock update after everything is ready
   setInterval(updateClock, 1000);
+
+  // update subviews
+  updateSubviewVisibility();
 }
 
 // helper to send a radio control GET and then refresh settings/UI

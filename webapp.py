@@ -15,7 +15,7 @@ state = "off"
 def ap_setup(): # open access point (no password)
     ap = network.WLAN(network.AP_IF)
     ap.config(hostname="alarm") 
-    ap.config(ssid='ECE299_Open', security=0)
+    ap.config(ssid='PandaAlarm', security=0)
     ap.active(True)
     
     while not ap.isconnected():
