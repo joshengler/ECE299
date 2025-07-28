@@ -113,11 +113,11 @@ class Radio:
             print("Radio not found!")
         
         #configure radio
-        flags = RDA5807M_FLG_DHIZ | RDA5807M_FLG_BASS | RDA5807M_FLG_ENABLE | RDA5807M_FLG_NEW | RDA5807M_FLG_SEEKUP | RDA5807M_FLG_RDS
+        flags = RDA5807M_FLG_DHIZ | RDA5807M_FLG_BASS | RDA5807M_FLG_ENABLE | RDA5807M_FLG_NEW | RDA5807M_FLG_SEEKUP# | RDA5807M_FLG_RDS
         self.write_reg(RDA5807M_REG_CONFIG, 0b11000001 | RDA5807M_FLG_RESET)
         self.write_reg(RDA5807M_REG_TUNING, 0x0)
         self.write_reg(RDA5807M_REG_GPIO, 0x1a00)
-        self.write_reg(RDA5807M_REG_VOLUME, 0x880f)
+        self.write_reg(RDA5807M_REG_VOLUME, 0x8800) # #0x880f = 0b1000100000001111, volume 15, soft mute enabled
         self.write_reg(RDA5807M_REG_I2S, 0x0000)
         self.write_reg(RDA5807M_REG_BLEND, 0x4202) #0x4202 = 0b0100001000000010, soft blend enabled, frequency mode enabled
         
