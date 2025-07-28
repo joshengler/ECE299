@@ -16,8 +16,7 @@ psu_mode = Pin(23, Pin.OUT)
 psu_mode.value(1)
 
 
-# clear the screen and init clock
-oled.fill(0)
+# and init clock
 clock = multifunction_clock(oled, radio_i2c, rtc_i2c)
 
 btn1 = debounced_button(pin_num=0, callback=lambda: clock.handle_buttons("up")) 

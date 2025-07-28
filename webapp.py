@@ -276,8 +276,6 @@ def start_web_app(multifunction_clock):
                 client.sendall(response_body.encode("utf-8"))
                 client.close()
             
-            
-        
     except OSError as e:
         print("error: connection terminated")
         client.close()

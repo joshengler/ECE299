@@ -303,7 +303,7 @@ class multifunction_clock:
                     self.snooze_count = 0
                 self.alarm_triggered = True
 
-    def draw_signal(self, x, y, bars):
+    def draw_signal(self, x, y, bars): # draws the signal strength of the radio as bars, sorta like win7 wifi
         bars = max(0, min(NUM_BARS, bars))
         bar_count = NUM_BARS       # module‐level constant
         bar_width = 4
@@ -321,52 +321,29 @@ class multifunction_clock:
             else:
                 # outline only
                 self.display.rect(xi, yi, bar_width, height, 1)
-    def poll_rds(self, timer=None):
-        """Called every 5ms to collect RDS blocks and print over serial."""
-        if self.radio:
-            self.radio.update_rds()
-    def scroll_text(self, text, width):
-        """Return a width‐char window into text, scrolling by one char each call."""
-        if len(text) <= width:
-            # pad manually since MicroPython str.ljust is unavailable
-            return text + " " * (width - len(text))
-        padding = " " * width
-        buf = text + padding
-        start = self.scroll_pos % len(buf)
-        win = buf[start:start+width]
-        if len(win) < width:
-            win += buf[: width - len(win)]
-        self.scroll_pos = (self.scroll_pos + 3) % len(buf)
-        return win
 
-    def draw_menu_bar(self):
-        # draw labels on 6th text line, highlight last pressed
+    def draw_menu_bar(self): # draws the menu bar that gives the user button hints and highlights the last pressed button
         y = self.line_spacing * 6
-        labels    = ["  ", "  ", "MODE", "SET"]
-        positions = [10, 40, 76, 112]
-        masks     = [MENU_UP, MENU_DOWN, MENU_MODE, MENU_SET]
-
+        labels    = ["    ", "    ", "MODE", "SET"] # default labels for buttons
+        positions = [12, 40, 76, 112] # x positions for buttons
+        masks     = [MENU_UP, MENU_DOWN, MENU_MODE, MENU_SET] # bit masks for buttons, indicates array positions of buttons
         self.buttons_enabled = MENU_MODE | MENU_SET
         if self.editing:
             self.buttons_enabled |= MENU_UP | MENU_DOWN
-            # change label for MODE to NEXT
-            labels[2] = "NEXT"
-            labels[3] = "DONE"
-            labels[0] = "UP"
-            labels[1] = "DOWN"
-        if self.alarm_triggered:
-            # set is snooze, mode is off
-            labels[2] = "OFF"
-            labels[3] = "SNOZ"
+            labels[0] = "UP" # increase value being edited
+            labels[1] = "DOWN" # decrease value being edited
+            labels[2] = "NEXT" # next field in edit mode
+            labels[3] = "DONE" # done editing
+        if self.alarm_triggered: # set becomes snooze, mode becomes reset
+            labels[2] = "RST" # reset alarm
+            labels[3] = "SNOZ" # only space for 4 characters
 
         for label, x, mask in zip(labels, positions, masks):
             # Center the text at position x
-            text_width = len(label) * 8
-            text_x = x - text_width // 2
-            self.display.text(label, text_x, y)
-            if self.last_button == mask:
-                # solid line for last pressed
-                self.display.hline(text_x, y - 2, text_width, 1)
-        self.last_button = None
-            #         self.display.pixel(text_x + i, y - 2, 1)
+            text_width = len(label) * 8 # calculate text width
+            text_x = x - text_width // 2 # center the label at x position in array
+            self.display.text(label, text_x, y) # draw the label
+            if self.last_button == mask: # if this button was last pressed, highlight it by a line above it
+                self.display.hline(text_x, y - 2, text_width, 1) #line above the button
+                self.display.hline(text_x, y - 1 + LINE_HEIGHT, text_width, 1) #line below the button
         self.last_button = None

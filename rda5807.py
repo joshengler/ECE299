@@ -283,7 +283,7 @@ class Radio:
         
     def get_signal_strength(self):
 
-        """ Recieved Signal Strength Indicator 0 = low, 7 = high (logarithmic)"""
+        """ Recieved Signal Strength Indicator 0 = low, 7 = high (logarithmic) -> the 127 divisor was removed to avoid rounding errors """
 
         #rssi = round(7*(self.read_reg(RDA5807M_REG_RSSI) >> 9)/127)
         rssi = (self.read_reg(RDA5807M_REG_RSSI) >> 9)
