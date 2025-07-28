@@ -8,7 +8,10 @@ import ujson # for settings parsing
 VOLUME_MAX = 4  # Max volume level for the radio
 led = Pin("LED", Pin.OUT)
 state = "off"
-logging = True  # Enable logging for debugging
+debug = False  # Enable logging for debugging
+def debug_print(*args, **kwargs):
+    if debug:
+        print(*args, **kwargs)
 
 def ap_setup(): 
     ap = network.WLAN(network.AP_IF)
@@ -17,9 +20,9 @@ def ap_setup():
     ap.active(True) # open access point (no password) -> secure :)
     
     while not ap.isconnected():
-        print('Connecting, please wait')
+        debug_print('Connecting, please wait')
         time.sleep(1)
-    print("Connected! ip =", ap.ifconfig()[0])
+    debug_print("Connected! ip =", ap.ifconfig()[0])
 
 def serve_file(path, multifunction_clock): # serve webpage from flash fs
     if path == "/" or path == "/on?" or path == "/off?":
@@ -85,9 +88,9 @@ def handle_set_time(path, multifunction_clock):
         current[6] = s
         
         multifunction_clock.rtc.datetime(current)
-        print("Time updated to:", multifunction_clock.get_time())
+        debug_print("Time updated to:", multifunction_clock.get_time())
     except Exception as e:
-        print("Failed to update time:", e)
+        debug_print("Failed to update time:", e)
     
 def handle_set_alarm(path, multifunction_clock):
     try:
@@ -107,7 +110,7 @@ def handle_set_alarm(path, multifunction_clock):
         multifunction_clock.alarm_enabled = True
 
     except Exception as e:
-        print("Failed to update alarm", e)
+        debug_print("Failed to update alarm", e)
 
 def start_web_app(multifunction_clock):
     ap_setup()
@@ -122,7 +125,7 @@ def start_web_app(multifunction_clock):
             except IndexError:
                 path = "/"
                 
-            print("Client requested:", path)
+            debug_print("Client requested:", path)
 
             if path.startswith("/toggle_format"): # use 12hr time
                 multifunction_clock.format_24h = not multifunction_clock.format_24h
@@ -193,12 +196,12 @@ def start_web_app(multifunction_clock):
                             multifunction_clock.update_radio(mute=False)
                         else:
                             multifunction_clock.update_radio(mute=True)
-                        print("Set display mode to:", mode)
+                        debug_print("Set display mode to:", mode)
                         client.send("HTTP/1.1 200 OK\r\n\r\n")
                     else:
                         client.send("HTTP/1.1 400 Bad Request\r\n\r\n")
                 except Exception as e:
-                    print("Error setting mode:", e)
+                    debug_print("Error setting mode:", e)
                     client.send("HTTP/1.1 400 Bad Request\r\n\r\n")
                 client.close()
             elif path.startswith("/radio_seek_up"): # radio tuning: seek up/down
@@ -234,5 +237,5 @@ def start_web_app(multifunction_clock):
                 client.sendall(response_body.encode("utf-8"))
                 client.close()
     except OSError as e:
-        print("connection terminated: err=" + str(e))
+        debug_print("connection terminated: err=" + str(e))
         client.close()

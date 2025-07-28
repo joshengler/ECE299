@@ -7,6 +7,8 @@ NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
 LINE_HEIGHT = const(9)  # Height of each line in pixels
 VOLUME_MAX = const(4)  # Maximum volume level for the radio
+CHAR_WIDTH = const(8)  # Width of each character in pixels
+CHARS_PER_LINE = const(16)  # Number of characters per line
 
 # menu bit masks (UP, DOWN, MODE, SET)
 MENU_UP   = 1 << 3
@@ -50,7 +52,7 @@ class multifunction_clock:
         self.line_spacing = LINE_HEIGHT # Line spacing for text display (px)
         self.edit_field = 0 # which field we are editing, 0 = hour, 1 = minute, 2 = format
         self.alarm_hour = 7 # default alarm hour. bright and early
-        self.alarm_minute = 0
+        self.alarm_minute = 0 # default alarm minute
         self.snooze_count = 0 # how many times the alarm has been snoozed, lazy person.
         self.editing = False # start in non edit mode
         self.alarm_triggered = False # start with alarm not triggered (duh)
@@ -58,20 +60,14 @@ class multifunction_clock:
         self.alarm_enabled = False # start with alarm disabled (we dont want to wake up at 7am on a weekend)
         self.format_24h = True # default to 24-hour format, its better
         self.led_state = False
-        self.original_alarm_hour = 7 # when unsnoozed, the alarm will return to this time
-        self.original_alarm_minute = 0 # when unsnoozed, the alarm will return to this time
+        self.original_alarm_hour = self.alarm_hour # when unsnoozed, the alarm will return to this time
+        self.original_alarm_minute = self.alarm_minute # when unsnoozed, the alarm will return to this time
         # LED and timers for alarm indication
         self.led = Pin("LED", Pin.OUT) # onboard LED for alarm indication
         self.blink_timer = Timer() # timer for blinking LED when alarm is triggered
         self.timer = Timer() # timer for updating display every second, tick tock
         self.timer.init(period=1000, mode=Timer.PERIODIC, callback=self.tick_update_disp)
-        # start RDS polling every 5 ms
-        #self.rds_timer = Timer()
-        #self.rds_timer.init(period=5, mode=Timer.PERIODIC, callback=self.poll_rds)
         self.invert_flag = False  # track current inversion state
-        # scrolling state for radio text
-        self.scroll_pos = 0
-        self.prev_track = ""
         self.last_button   = None  # track last pressed button
         self.buttons_enabled = 0     # which menu buttons are pushable
 
@@ -172,50 +168,31 @@ class multifunction_clock:
         # Display current time immediately under title
         year, month, day, weekday, hour, minute, second, subsecond = self.rtc.datetime()
         self.display.text("Now: " + self.format_time(hour, minute, second), 0, self.line_spacing * 1)
-        # blank gap for line 3
         # alarm time and status
         self.display.text("State: " + ("On" if self.alarm_enabled else "Off"), 0, self.line_spacing * 3)
-        # # SET / snooze / trigger prompt
-        # if self.alarm_triggered:
-        #     self.display.text("Press SET to snooze", 0, self.line_spacing * 4)
-        #     # add snooze to available actions mask
         if self.snooze_active:
-            self.display.text(f"Snoozed {self.snooze_count}x", 0, self.line_spacing * 2)
+            self.display.text(f"Snoozing... ({self.snooze_count}x)", 0, self.line_spacing * 2)
         elif self.editing:
             edit_labels = ["Set: Hour", "Set: Minute", "Set: On/Off"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4) 
 
     # draw the radio UI
     def draw_radio_mode(self):
-        #if radio is None: # if radio is not initialized, display error
         if self.radio is None:
             self.display.text("Radio->Not initialized", 0, 0)
             return
-        #self.radio.optimize_blending()  # optimize blending for better performance
         self.display.text(f"Radio FM {self.radio_frequency:.1f}", 0, 0)
         self.display.text(f"Volume:{self.radio.get_volume()}/{VOLUME_MAX}", 0, self.line_spacing * 1)
-        # # Display RDS on line 2 and 3
-        # if self.radio.station_name:
-        #     self.display.text("S:" + "".join(self.radio.station_name).strip(), 0, self.line_spacing * 2)
-        # # scrolling track window (13 chars)
-        # if self.radio.radio_text:
-        #     track = "".join(self.radio.radio_text).strip()
-        #     # reset scroll on new track
-        #     if track != self.prev_track:
-        #         self.scroll_pos = 0
-        #         self.prev_track = track
-        #     window = self.scroll_text(track, 13)
-        #     self.display.text("T:" + window, 0, self.line_spacing * 3)
-        self.draw_signal(14*8, self.line_spacing * 1, int(self.radio.get_signal_strength() // (MAX_RSSI/NUM_BARS)))
+        #draw the signal strength bars, at last 2 characters of the second line
+        self.draw_signal((CHARS_PER_LINE-2)*CHAR_WIDTH, self.line_spacing * 1, int(self.radio.get_signal_strength() // (MAX_RSSI/NUM_BARS)))
         if self.editing:
             edit_labels = ["SET: Frequency", "SET: Volume"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4)
     
     # parent handler for button presses
     def handle_buttons(self, button_type):
-        # store last pressed button as its mask
-        mask_map = {"up": MENU_UP, "down": MENU_DOWN, "mode": MENU_MODE, "set": MENU_SET}
-        self.last_button = mask_map.get(button_type)
+        mask_map = {"up": MENU_UP, "down": MENU_DOWN, "mode": MENU_MODE, "set": MENU_SET} # store last pressed button as its mask
+        self.last_button = mask_map.get(button_type) # we need this for the menu bar highlighting
         handlers = {
             "up": self.button_up,
             "down": self.button_down,
