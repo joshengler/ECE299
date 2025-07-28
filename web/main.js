@@ -9,6 +9,7 @@ let current = "{time}"; // will be overwritten if you fetch later
 let alarmHour;
 let alarmMinute;
 
+let use24hr = true;        // control 12/24 display
 
 /* SWITCH BETWEEN MODES */
 function switchMainView(viewId) {
@@ -22,9 +23,9 @@ function switchMainView(viewId) {
   document.getElementById(viewId).classList.add('active');
 
   // only show alarm toggle on ALARM view
-  const alarmToggleContainer = document.getElementById("alarmToggle");
+  // const alarmToggleContainer = document.getElementById("alarmToggle");
 
-  alarmToggleContainer.style.display = (viewId === "ALARM") ? "flex" : "none";
+  // alarmToggleContainer.style.display = (viewId === "ALARM") ? "flex" : "none";
 }
 
 function openView(viewId) {
@@ -46,10 +47,15 @@ function openView(viewId) {
 function updateClock() {
   let elapsed = Date.now() - startClient;
   let dt = new Date(startTime + elapsed);
-  let hh = String(dt.getHours()).padStart(2,'0');
-  let mm = String(dt.getMinutes()).padStart(2,'0');
-  let ss = String(dt.getSeconds()).padStart(2,'0');
-  document.getElementById("time").innerText = `${hh}:${mm}:${ss}`;
+  let hh = dt.getHours(), suffix = "";
+  if (!use24hr) {
+    suffix = hh < 12 ? " AM" : " PM";
+    hh = hh % 12 || 12;
+  }
+  let H = String(hh).padStart(2,'0'),
+      M = String(dt.getMinutes()).padStart(2,'0'),
+      S = String(dt.getSeconds()).padStart(2,'0');
+  document.getElementById("time").innerText = `${H}:${M}:${S}${suffix}`;
 }
 
 function setUpClockDisplay() {
@@ -70,10 +76,14 @@ function setUpClockDisplay() {
 /* ALARM DISPLAY */
 function updateAlarmDisplay() {
 
-  let hh = String(alarmHour).padStart(2,'0');
-  let mm = String(alarmMinute).padStart(2,'0');
-
-  document.getElementById("alarm").innerText = `${hh}:${mm}`;
+  let hh = alarmHour, suffix="";
+  if (!use24hr) {
+    suffix = hh < 12 ? " AM" : " PM";
+    hh = hh % 12 || 12;
+  }
+  let H = String(hh).padStart(2,'0'),
+      M = String(alarmMinute).padStart(2,'0');
+  document.getElementById("alarm").innerText = `${H}:${M}${suffix}`;
 }
 
 function toggleAlarm() {
@@ -89,6 +99,26 @@ function toggleAlarm() {
     .catch(err => {
         console.error("Error:", err);
     });
+}
+
+function applyFormatView() {
+  fetch("/set_format?format=" + (use24hr ? "24" : "12"))
+    .catch(console.error);
+
+  // toggle subviews for clock
+  document.getElementById("clock_24hView").classList.toggle('active', use24hr);
+  document.getElementById("clock_12hView").classList.toggle('active', !use24hr);
+  // toggle subviews for alarm
+  document.getElementById("alarm_24hView").classList.toggle('active', use24hr);
+  document.getElementById("alarm_12hView").classList.toggle('active', !use24hr);
+  // re-render displays
+  updateClock();
+  updateAlarmDisplay();
+}
+
+function toggleFormat() {
+  use24hr = !use24hr;
+  applyFormatView();
 }
 
 
@@ -115,6 +145,8 @@ function applySettings(settings) {
     alarmToggle.checked = false;
   }
 
+  // sync checkbox
+  document.getElementById("format_toggle").checked = !use24hr;
 
   // update radio display if present
   if (settings.radio_frequency !== undefined) {
@@ -231,4 +263,56 @@ function setTimer(event, form) {
     })
     .catch(err => console.error("Error fetching settings for timer:", err));
 }
+
+/* FORM SUBMISSION HANDLERS */
+// time form (24h & 12h)
+function handleTimeSet(evt, form) {
+  evt.preventDefault();
+  let h = parseInt(form.h.value,10),
+      m = parseInt(form.m.value,10),
+      s = parseInt(form.s.value,10)||0;
+  if (form.format.value==="12") {
+    let pm = form.ampm.value==="PM";
+    if (h===12) h = pm ? 12 : 0;
+    else if (pm) h += 12;
+  }
+  const params = new URLSearchParams({h,m,s,format:24});
+  fetch(`/set_time?${params.toString()}#TIME`)
+    .then(r=>r.ok?getSettingsAndStartClock():Promise.reject())
+    .catch(console.error);
+}
+
+// alarm form (24h & 12h)
+function handleAlarmSet(evt, form) {
+  evt.preventDefault();
+  let h = parseInt(form.h.value,10),
+      m = parseInt(form.m.value,10);
+  if (form.format.value==="12") {
+    let pm = form.ampm.value==="PM";
+    if (h===12) h = pm ? 12 : 0;
+    else if (pm) h += 12;
+  }
+  const params = new URLSearchParams({h,m,format:24,mode:"alarm"});
+  fetch(`/set_alarm?${params.toString()}#ALARM`)
+    .then(r=>r.ok?fetch("/alarm_enabled").then(_=>getSettingsAndStartClock()):Promise.reject())
+    .catch(console.error);
+}
+
+// timer form (both 24 & 12 share same handler)
+function handleTimer(evt, form) {
+  evt.preventDefault();
+  setTimer(evt, form);
+}
+
+/* ATTACH LISTENERS ON LOAD */
+window.addEventListener("load",()=>{
+  document.getElementById("time_form_24").  addEventListener("submit", e=>handleTimeSet(e,e.target));
+  document.getElementById("time_form_12").  addEventListener("submit", e=>handleTimeSet(e,e.target));
+  document.getElementById("alarm_form_24"). addEventListener("submit", e=>handleAlarmSet(e,e.target));
+  document.getElementById("alarm_form_12"). addEventListener("submit", e=>handleAlarmSet(e,e.target));
+  document.getElementById("timer_form").    addEventListener("submit", e=>handleTimer(e,e.target));
+  document.getElementById("timer_form_12"). addEventListener("submit", e=>handleTimer(e,e.target));
+});
+
+// ...rest of existing code (getSettingsAndStartClock, setTimer, etc.)...
 

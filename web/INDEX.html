@@ -26,12 +26,30 @@
             </div>
             <br>
             <div class="container">
+                <div class="container">
+                  <button id="format_toggle" onclick="toggleFormat()">Toggle time format</button>
+                </div>
+                <!-- 24h manual set -->
                 <div id="clock_24hView" class="subview active">
-                    <form action="/set_time#TIME" method="get">
+                    <form id="time_form_24" action="/set_time#TIME" method="get">
                         <input type="number" name="h" placeholder="Hour"   min="0"  max="23" required>
                         <input type="number" name="m" placeholder="Minute" min="0"  max="59" required>
                         <input type="number" name="s" placeholder="Second" min="0"  max="59" value="0">
                         <input type="hidden" name="format" value="24">
+                        <button type="submit">Set Manually</button>
+                    </form>
+                </div>
+                <!-- 12h manual set -->
+                <div id="clock_12hView" class="subview">
+                    <form id="time_form_12" action="/set_time#TIME" method="get">
+                        <input type="number" name="h" placeholder="Hour"   min="1"  max="12" required>
+                        <input type="number" name="m" placeholder="Minute" min="0"  max="59" required>
+                        <input type="number" name="s" placeholder="Second" min="0"  max="59" value="0">
+                        <select name="ampm">
+                          <option value="AM">AM</option>
+                          <option value="PM">PM</option>
+                        </select>
+                        <input type="hidden" name="format" value="12">
                         <button type="submit">Set Manually</button>
                     </form>
                 </div>
@@ -57,8 +75,11 @@
             <span id="alarm">{alarm}</span>
           </div>
           <div class="container">
+            <div class="container">
+              <button id="format_toggle" onclick="toggleFormat()">Toggle time format</button>
+            </div>
+            <!-- 24h alarm/timer -->
             <div id="alarm_24hView" class="subview active">
-              <!-- alarm‐set form -->
               <form id="alarm_form_24" action="/set_alarm#ALARM" method="get">
                 <input type="number" name="h" placeholder="Hour"   min="0"  max="23" required>
                 <input type="number" name="m" placeholder="Minute" min="0"  max="59" required>
@@ -66,10 +87,29 @@
                 <input type="hidden" name="mode" value="alarm">
                 <button type="submit">Set Alarm</button>
               </form>
-              <!-- timer form -->
-              <form id="timer_form_24" action="/set_alarm#ALARM" method="get">
+              <form id="timer_form"     action="/set_alarm#ALARM" method="get">
                 <input type="number" name="h" placeholder="Hours"   min="0" value="0" required>
-                <input type="number" name="m" placeholder="Minutes" min="0"          required>
+                <input type="number" name="m" placeholder="Minutes" min="0" required>
+                <input type="hidden" name="mode" value="timer">
+                <button type="submit">Set Timer</button>
+              </form>
+            </div>
+            <!-- 12h alarm only -->
+            <div id="alarm_12hView" class="subview">
+              <form id="alarm_form_12" action="/set_alarm#ALARM" method="get">
+                <input type="number" name="h" placeholder="Hour"   min="1"  max="12" required>
+                <input type="number" name="m" placeholder="Minute" min="0"  max="59" required>
+                <select name="ampm">
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+                <input type="hidden" name="format" value="12">
+                <input type="hidden" name="mode" value="alarm">
+                <button type="submit">Set Alarm</button>
+              </form>
+              <form id="timer_form_12" action="/set_alarm#ALARM" method="get">
+                <input type="number" name="h" placeholder="Hours"   min="0" value="0" required>
+                <input type="number" name="m" placeholder="Minutes" min="0" required>
                 <input type="hidden" name="mode" value="timer">
                 <button type="submit">Set Timer</button>
               </form>
@@ -78,15 +118,14 @@
         </div>
 
 
-        <!-- Shared toggle placed once -->
+        <!-- Shared toggles -->
         <div id="alarmToggle" class="container">
             <input type="checkbox" id="alarm_toggle" onchange="toggleAlarm()" {alarmChecked} />
             <label for="alarm_toggle">Enable Alarm</label>
         </div>
-
     </body>
 
 
 </html>
-                
+
 
