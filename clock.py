@@ -159,10 +159,17 @@ class multifunction_clock:
         self.display.text("Clock", 0, 0)
         self.display.text(self.format_time(hour, minute, second), 0, self.line_spacing * 2)
         self.display.text("24H" if self.format_24h else "12H", 100, 0)
-    
+        # on line 3 draw ds3231 temperature, this is a gimick so its commented out.
+        # try:
+        #     temperature = self.rtc.get_temperature()
+        #     self.display.text(f"tRTC: {temperature:.1f}C", 0, self.line_spacing * 3)
+        # except Exception as e:
+        #     self.display.text("tRTC: N/A", 0, self.line_spacing * 3)
+        #     print(f"Temperature read error: {e}")
         if self.editing:
             edit_labels = ["SET: Hour", "SET: Minute", "SET: Format"]
             self.display.text(edit_labels[self.edit_field], 0, self.line_spacing * 4) 
+        
     def draw_alarm_mode(self):
         self.display.text("Alarm: " + self.format_time(self.alarm_hour, self.alarm_minute), 0, 0)
         # Display current time immediately under title
