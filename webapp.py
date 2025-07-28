@@ -3,30 +3,25 @@ import socket
 import time
 from machine import Pin
 from clock import multifunction_clock
+import ujson # for settings parsing
 
 VOLUME_MAX = 4  # Max volume level for the radio
-
-# USES GET REQUESTS AND CHECKS THE URL PATH TO TURN THE LED ON/OFF
-
 led = Pin("LED", Pin.OUT)
-
 state = "off"
+logging = True  # Enable logging for debugging
 
-def ap_setup(): # open access point (no password)
+def ap_setup(): 
     ap = network.WLAN(network.AP_IF)
-    ap.config(hostname="alarm") 
-    ap.config(ssid='PandaAlarm', security=0)
-    ap.active(True)
+    ap.config(hostname="alarm") # failed attempt at mDNS... no mDNS support in AP mode.
+    ap.config(ssid='PandaAlarm', security=0) #hire me crowdstrike I will make sure you have a worldwide BSOD incident again
+    ap.active(True) # open access point (no password) -> secure :)
     
     while not ap.isconnected():
         print('Connecting, please wait')
         time.sleep(1)
-        
     print("Connected! ip =", ap.ifconfig()[0])
 
-# serve webpage
-
-def serve_file(path, multifunction_clock):
+def serve_file(path, multifunction_clock): # serve webpage from flash fs
     if path == "/" or path == "/on?" or path == "/off?":
         path = "/INDEX.html"
         with open("web/INDEX.html", "r") as file:
@@ -55,8 +50,7 @@ def serve_file(path, multifunction_clock):
 def open_socket(): # allows devices to send and receive information
     address = socket.getaddrinfo("0.0.0.0", 80)[0][-1]
     s = socket.socket()
-    # allow reusing the address immediately after soft-reboot
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow reusing the address immediately after soft-reboot
     try:
         s.bind(address)
     except OSError as e:
@@ -103,24 +97,9 @@ def handle_set_alarm(path, multifunction_clock):
         
         mode = query.get("mode", "alarm")
 
-        if mode == "timer":
-            # compute new alarm by adding duration to current RTC time
-            current = list(multifunction_clock.rtc.datetime())
-            # current = [year, month, day, weekday, hr, min, sec, subsec]
-            hr_now, min_now = current[4], current[5]
-            dur_h = int(query["h"])
-            dur_m = int(query["m"])
-            total_now = hr_now*60 + min_now
-            total_add = dur_h*60 + dur_m
-            new_total = (total_now + total_add) % (24*60)
-            h = new_total // 60
-            m = new_total % 60
-        else:
-            # original alarm‐set logic
-            h = int(query["h"])
-            m = int(query["m"])
+        h = int(query["h"]) # cache hours cuz we use twice 
+        m = int(query["m"])
 
-        # update alarm fields on clock
         multifunction_clock.original_alarm_hour = h
         multifunction_clock.original_alarm_minute = m
         multifunction_clock.alarm_hour = h
@@ -132,10 +111,10 @@ def handle_set_alarm(path, multifunction_clock):
 
 def start_web_app(multifunction_clock):
     ap_setup()
-    s = open_socket()
+    sock = open_socket()
     try:
         while True:
-            client = s.accept()[0] # wait for a connection
+            client = sock.accept()[0] # wait for a connection
             request = client.recv(1024) # get data
             request = str(request) #store data as string
             try:
@@ -144,56 +123,41 @@ def start_web_app(multifunction_clock):
                 path = "/"
                 
             print("Client requested:", path)
-                
-            # use 24hr time    
-            if path.startswith("/set_format?format=24"):
-                multifunction_clock.format_24h = True
-                
-                client.send("HTTP/1.1 303 See Other\r\n")
-                client.send("Location: /\r\n")
-                client.send("\r\n")
-                client.close()
-                
-            # use 12hr time 
-            elif path.startswith("/set_format"):
-                multifunction_clock.format_24h = False
 
+            if path.startswith("/toggle_format"): # use 12hr time
+                multifunction_clock.format_24h = not multifunction_clock.format_24h
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /\r\n")
                 client.send("\r\n")
                 client.close()
                 
-            # set clock time
-            elif path.startswith("/set_time"):
+            
+            elif path.startswith("/set_time"): # set clock time
                 handle_set_time(path, multifunction_clock)
-                
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#TIME\r\n")
                 client.send("\r\n")
                 client.close()
             
-            # set alarm time
-            elif path.startswith("/set_alarm"):
+            
+            elif path.startswith("/set_alarm"): # set alarm time
                 handle_set_alarm(path, multifunction_clock)
-                
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#ALARM\r\n")
                 client.send("\r\n")
                 client.close()
                 
-            # disable alarm
-            elif path.startswith("/alarm_enabled"):
-                multifunction_clock.alarm_enabled = True;
-                
+            
+            elif path.startswith("/alarm_enabled"): # enable alarm
+                multifunction_clock.alarm_enabled = True
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#ALARM\r\n")
                 client.send("\r\n")
                 client.close()
             
-            # enable alarm
-            elif path.startswith("/alarm_disabled"):
-                multifunction_clock.alarm_enabled = False;
-                
+            
+            elif path.startswith("/alarm_disabled"): # disable alarm
+                multifunction_clock.alarm_enabled = False
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#ALARM\r\n")
                 client.send("\r\n")
@@ -202,18 +166,14 @@ def start_web_app(multifunction_clock):
             # send settings to browser
             elif path.startswith("/get_settings"):
                 settings = {
-                     "time": multifunction_clock.get_time(),
-                     "format_24h": multifunction_clock.format_24h,
-                     "alarm_hour": multifunction_clock.alarm_hour,
-                     "alarm_minute": multifunction_clock.alarm_minute,
-                     "alarm_toggle": multifunction_clock.alarm_enabled
-                    ,
+                    "time": multifunction_clock.get_time(),
+                    "format_24h": multifunction_clock.format_24h,
+                    "alarm_hour": multifunction_clock.alarm_hour,
+                    "alarm_minute": multifunction_clock.alarm_minute,
+                    "alarm_toggle": multifunction_clock.alarm_enabled,
                     "radio_frequency": multifunction_clock.radio.get_frequency_MHz(),
                     "radio_volume": multifunction_clock.radio.get_volume()
                 }
-                
-                import ujson
-                
                 response_body = ujson.dumps(settings)
                 client.send("HTTP/1.1 200 OK\r\n")
                 client.send("Content-Type: application/json\r\n\r\n")
@@ -241,8 +201,7 @@ def start_web_app(multifunction_clock):
                     print("Error setting mode:", e)
                     client.send("HTTP/1.1 400 Bad Request\r\n\r\n")
                 client.close()
-            # radio tuning: seek up/down
-            elif path.startswith("/radio_seek_up"):
+            elif path.startswith("/radio_seek_up"): # radio tuning: seek up/down
                 multifunction_clock.radio.seek_up()
                 multifunction_clock.radio_status()
                 client.send("HTTP/1.1 303 See Other\r\n")
@@ -256,8 +215,7 @@ def start_web_app(multifunction_clock):
                 client.send("Location: /#RADIO\r\n")
                 client.send("\r\n")
                 client.close()
-            # radio volume controls: volume up/down
-            elif path.startswith("/radio_vol_up"):
+            elif path.startswith("/radio_vol_up"):# radio volume controls: volume up/down
                 multifunction_clock.update_radio(vol= max(0, min(VOLUME_MAX, multifunction_clock.radio.get_volume() + 1)))
                 client.send("HTTP/1.1 303 See Other\r\n")
                 client.send("Location: /#RADIO\r\n")
@@ -275,12 +233,6 @@ def start_web_app(multifunction_clock):
                 client.send("Content-Type: {}\r\n\r\n".format(content_type))
                 client.sendall(response_body.encode("utf-8"))
                 client.close()
-            
     except OSError as e:
-        print("error: connection terminated")
+        print("connection terminated: err=" + str(e))
         client.close()
-
-
-
-
-

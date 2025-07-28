@@ -1,36 +1,21 @@
 /* GLOBAL VARIABLES */
-
-
 // display RTC time in web
 let startTime, startClient;
-//let use24hr = true; // default, will be set in setup
 let current = "{time}"; // will be overwritten if you fetch later
-
 let alarmHour;
 let alarmMinute;
-
-let use24hr = true;        // control 12/24 display
+let use24hr = true;        // control 12/24 display, default is 24h
 
 /* SWITCH BETWEEN MODES */
 function switchMainView(viewId) {
-
-  // hide all modes
   document.querySelectorAll('.view').forEach(view => {
   view.classList.remove('active');
-  });
-
-  // show active mode
-  document.getElementById(viewId).classList.add('active');
-
-  // only show alarm toggle on ALARM view
-  // const alarmToggleContainer = document.getElementById("alarmToggle");
-
-  // alarmToggleContainer.style.display = (viewId === "ALARM") ? "flex" : "none";
+  }); // hide all modes
+  document.getElementById(viewId).classList.add('active'); // only show active mode
 }
 
 function openView(viewId) {
   switchMainView(viewId);
-
     fetch(`/set_mode?mode=${viewId}`)
     .then(response => {
       if (!response.ok) throw new Error("Failed to set mode");
@@ -41,9 +26,7 @@ function openView(viewId) {
     });
 }
 
-
 /* TIME DISPLAY */
-
 function updateClock() {
   let elapsed = Date.now() - startClient;
   let dt = new Date(startTime + elapsed);
@@ -58,7 +41,7 @@ function updateClock() {
   document.getElementById("time").innerText = `${H}:${M}:${S}${suffix}`;
 }
 
-function setUpClockDisplay() {
+function setUpClockDisplay() { // runs every 5s
   document.getElementById("clock_24hView").classList.add('active');
 
   let parts = current.trim().split(":").map(x=>parseInt(x,10));
@@ -71,14 +54,11 @@ function setUpClockDisplay() {
   startClient = Date.now();
 
   setInterval(updateClock,1000);
-
-  // update subviews
-  updateSubviewVisibility();
+  updateSubviewVisibility(); //update subviews to prevent both 12/24h views visible
 }
 
 /* ALARM DISPLAY */
 function updateAlarmDisplay() {
-
   let hh = alarmHour, suffix="";
   if (!use24hr) {
     suffix = hh < 12 ? " AM" : " PM";
@@ -90,10 +70,8 @@ function updateAlarmDisplay() {
 }
 
 function toggleAlarm() {
-
   const url = document.getElementById("alarm_toggle").checked
             ? "/alarm_enabled" : "/alarm_disabled";
-
   fetch(url)
     .then(response => {
         if (!response.ok) throw new Error ("toggle failed");
@@ -105,16 +83,11 @@ function toggleAlarm() {
 }
 
 function applyFormatView() {
-  fetch("/set_format?format=" + (use24hr ? "24" : "12"))
+  fetch("/toggle_format")
     .catch(console.error);
-
-
-  // re-render displays
-  updateClock();
+  updateClock();   // re-render displays
   updateAlarmDisplay();
-
-  // update subviews
-  updateSubviewVisibility();
+  updateSubviewVisibility(); 
 }
 
 function toggleFormat() {
@@ -135,10 +108,7 @@ function updateSubviewVisibility() {
 
 /* GRAB AND DISPLAY SETTINGS FROM PICO */
 function applySettings(settings) {
-  // apply format setting
-  use24hr = settings.format_24h === true || settings.format_24h === "true";
-  //document.getElementById("24hr_toggle").checked = use24hr;
-
+  use24hr = settings.format_24h === true || settings.format_24h === "true"; // apply format setting
   // update starting time
   current = settings.time;
   setUpClockDisplay();
@@ -212,15 +182,11 @@ function setToSystemTime() {
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
-
-
     const params = new URLSearchParams({
         h: hours,
         m: minutes,
         s: seconds,
-        //format: format,
     });
-
     fetch(`/set_time?${params.toString()}#TIME`)
         .then(response => {
             if (!response.ok) throw new Error("Failed to set system time");
@@ -230,52 +196,6 @@ function setToSystemTime() {
         .catch(err => {
             console.error("Error setting system time:", err);
         });
-}
-
-/* New: accept (event, form), read values directly, prevent default */
-function setTimer(event, form) {
-  event.preventDefault();
-  const durH = parseInt(form.elements['h'].value, 10) || 0;
-  const durM = parseInt(form.elements['m'].value, 10) || 0;
-  const totalMin = durH * 60 + durM;
-  if (totalMin < 1) return;
-
-  // fetch actual device clock time
-  fetch("/get_settings")
-    .then(res => res.json())
-    .then(settings => {
-      // parse RTC time
-      const parts = settings.time.split(":").map(x => parseInt(x, 10));
-      const now = new Date();
-      now.setHours(parts[0], parts[1], parts[2], 0);
-
-      // add the timer duration
-      now.setMinutes(now.getMinutes() + totalMin);
-      const newHour24 = now.getHours();
-      const newMinute = now.getMinutes();
-
-      // build query based on 24h setting
-      const params = new URLSearchParams({
-        h: newHour24,
-        m: newMinute,
-        format: "24",
-        mode: "timer"
-      });
-
-      // send to set_alarm
-      fetch(`/set_alarm?${params.toString()}#ALARM`)
-        .then(resp => {
-          if (!resp.ok) throw new Error("Failed to set timer alarm");
-          // always enable alarm after setting it
-          return fetch("/alarm_enabled");
-        })
-        .then(resp2 => {
-          if (!resp2.ok) throw new Error("Failed to enable alarm");
-          return getSettingsAndStartClock();
-        })
-        .catch(err => console.error("Error setting timer or enabling alarm:", err));
-    })
-    .catch(err => console.error("Error fetching settings for timer:", err));
 }
 
 /* FORM SUBMISSION HANDLERS */
@@ -301,21 +221,15 @@ function handleAlarmSet(evt, form) {
   evt.preventDefault();
   let h = parseInt(form.h.value,10),
       m = parseInt(form.m.value,10);
-  if (form.format.value==="12") {
+  if (form.format.value==="12") { // convert to 24h
     let pm = form.ampm.value==="PM";
     if (h===12) h = pm ? 12 : 0;
     else if (pm) h += 12;
   }
-  const params = new URLSearchParams({h,m,format:24,mode:"alarm"});
+  const params = new URLSearchParams({h,m});
   fetch(`/set_alarm?${params.toString()}#ALARM`)
     .then(r=>r.ok?fetch("/alarm_enabled").then(_=>getSettingsAndStartClock()):Promise.reject())
     .catch(console.error);
-}
-
-// timer form (both 24 & 12 share same handler)
-function handleTimer(evt, form) {
-  evt.preventDefault();
-  setTimer(evt, form);
 }
 
 /* ATTACH LISTENERS ON LOAD */
@@ -327,6 +241,3 @@ window.addEventListener("load",()=>{
   document.getElementById("timer_form").    addEventListener("submit", e=>handleTimer(e,e.target));
   document.getElementById("timer_form_12"). addEventListener("submit", e=>handleTimer(e,e.target));
 });
-
-// ...rest of existing code (getSettingsAndStartClock, setTimer, etc.)...
-
