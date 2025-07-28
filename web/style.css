@@ -1,37 +1,182 @@
-/* BUTTONS */
+/* Global reset & base */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    line-height: 1.4;
+}
 
-.btn_container{
+/* Header / Nav */
+header {
+    background-color: #fff;
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.btn_container {
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 600px;
+    margin: 0 auto;
 }
-
 .btn_settings {
-    width: 200px;
-    background-color: rgb(192, 170, 170);
-    color: white;
-    font-size: 15pt;
+    background-color: #007bff;
+    color: #fff;
+    font-size: 1rem;
     border: none;
-    padding: 20px;
+    padding: 12px 20px;
     border-radius: 5px;
     cursor: pointer;
-    margin-right: 8px;
-    transition: all 300ms ease;
+    margin: 5px;
+    transition: background 300ms ease;
 }
-
 .btn_settings:hover {
-    opacity: 0.8;
-    background-color: grey;
+    background-color: #0056b3;
 }
 
-.settings_container{
-    min-height: 100px;
-    border: 8px solid black;
+/* Main container for views */
+main {
+    padding: 20px;
     display: flex;
-    justify-content: center;    
+    flex-direction: column;
     align-items: center;
-
 }
+.view {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+.view.active {
+    display: block;
+}
+
+/* Override old border on settings_container if used */
+.settings_container {
+    border: none;
+}
+
+/* Form controls */
+form input,
+form select,
+form button {
+    padding: 8px;
+    margin: 5px 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+form button {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+form button:hover {
+    background-color: #218838;
+}
+
+/* Action buttons (Set Automatically, Toggle, Seek, Volume) */
+.view .container > button {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    padding: 8px;
+    margin: 5px 4px;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+.view .container > button:hover {
+    background-color: #218838;
+}
+
+/* Toggle switch styling for accessible Enable Alarm */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    margin-right: 8px;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+}
+input:checked + .slider {
+    background-color: #28a745;
+}
+input:focus + .slider {
+    box-shadow: 0 0 2px #28a745;
+}
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+.slider.round {
+    border-radius: 28px;
+}
+.slider.round:before {
+    border-radius: 50%;
+}
+.toggle-label {
+    font-size: 1rem;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+    align-self: center;
+}
+
+/* Footer */
+footer {
+    padding: 10px 0;
+    text-align: center;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+    .btn_container {
+        flex-direction: column;
+    }
+    .btn_settings {
+        width: 90%;
+        max-width: 300px;
+    }
+}
+
 /* time display format */
 #time {
     font-size: 60pt; /* or use 64px, 5em, etc. */
@@ -45,6 +190,12 @@
 .container {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;    /* allow items to wrap onto new lines */
+}
+
+.container > p {         /* make the <p> span the full row */
+    flex-basis: 100%;
+    text-align: center;
 }
 
 #alarm {
