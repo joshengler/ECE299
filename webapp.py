@@ -1,12 +1,10 @@
 import network
 import socket
 import time
-from machine import Pin
 from clock import multifunction_clock
 import ujson # for settings parsing
 
 VOLUME_MAX = 4  # Max volume level for the radio
-led = Pin("LED", Pin.OUT)
 state = "off"
 debug = False  # Enable logging for debugging
 def debug_print(*args, **kwargs):
@@ -16,7 +14,7 @@ def debug_print(*args, **kwargs):
 def ap_setup(): 
     ap = network.WLAN(network.AP_IF)
     ap.config(hostname="alarm") # failed attempt at mDNS... no mDNS support in AP mode.
-    ap.config(ssid='PandaAlarm', security=0) #hire me crowdstrike I will make sure you have a worldwide BSOD incident again
+    ap.config(ssid='PandaAlarm', security=0) # hire me crowdstrike I will make sure you have a worldwide BSOD incident again
     ap.active(True) # open access point (no password) -> secure :)
     
     while not ap.isconnected():
@@ -24,7 +22,7 @@ def ap_setup():
         time.sleep(1)
     debug_print("Connected! ip =", ap.ifconfig()[0])
 
-def serve_file(path, multifunction_clock): # serve webpage from flash fs
+def serve_file(path, multifunction_clock): # serve webpage from flash fs, pass in the clock object that was previously setup.
     if path == "/" or path == "/on?" or path == "/off?":
         path = "/INDEX.html"
         with open("web/INDEX.html", "r") as file:

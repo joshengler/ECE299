@@ -1,7 +1,5 @@
 from machine import RTC, Timer, Pin
-from micropython import const
-import time, rda5807
-import urtc
+import time, rda5807, urtc
 
 NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
@@ -20,29 +18,24 @@ class multifunction_clock:
     # init everything under the sun
     def __init__(self, display, radio_i2c, rtc_i2c):
         self.display = display
-        #self.rtc = RTC() # initialize the RTC
         self.mode = "TIME" # start in time mode
         self.radio_frequency = 101.9 # default FM frequency
         self.radio_volume = 0 # default volume level
-        # configure radio module
-        try:
+        try: # try configure radio module
             self.radio = rda5807.Radio(radio_i2c)
             self.radio.set_volume(self.radio_volume)
             self.radio.set_frequency_MHz(self.radio_frequency)
             self.radio.mute(True)
-        except Exception as e:
+        except Exception as e: # we couldnt communicate with the radio.
             print(f"Radio initialization failed: {e}")
             self.radio = None
-        # initialize RTC
-        try:
+        try: # try initialize RTC
             self.rtc = urtc.DS3231(rtc_i2c)
             current_time = self.rtc.datetime()
-            if current_time[0] == 2000: # if year is 2000, rtc is not initialized
+            if current_time[0] == 2000: # if year is 2000, rtc is not initialized.
                 local_time = time.localtime() # get local time
                 self.rtc.datetime(local_time) # set rtc to local time
                 print("Initialized RTC to local time")
-            else:
-                print("RTC already intialized:", self.rtc.datetime())
         except Exception as e:
             print(f"RTC initialization failed: {e}")
             self.rtc = RTC()  # fallback to built-in RTC
