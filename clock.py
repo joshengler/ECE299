@@ -4,7 +4,7 @@ import time, rda5807, urtc
 NUM_BARS = const(4)  # Number of signal strength bars to display
 MAX_RSSI = const(70) # Maximum RSSI value for scaling bars
 LINE_HEIGHT = const(9)  # Height of each line in pixels
-VOLUME_MAX = const(4)  # Maximum volume level for the radio
+VOLUME_MAX = const(8)  # Maximum volume level for the radio
 CHAR_WIDTH = const(8)  # Width of each character in pixels
 CHARS_PER_LINE = const(16)  # Number of characters per line
 
@@ -310,7 +310,7 @@ class multifunction_clock:
             labels[2] = "NEXT" # next field in edit mode
             labels[3] = "DONE" # done editing
         if self.alarm_triggered: # set becomes snooze, mode becomes reset
-            labels[2] = "RST" # reset alarm
+            labels[2] = "RSET" # reset alarm
             labels[3] = "SNOZ" # only space for 4 characters
 
         for label, x, mask in zip(labels, positions, masks):

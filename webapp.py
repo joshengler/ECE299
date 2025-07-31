@@ -4,7 +4,7 @@ import time
 from clock import multifunction_clock
 import ujson # for settings parsing
 
-VOLUME_MAX = 4  # Max volume level for the radio
+VOLUME_MAX = 8  # Max volume level for the radio
 state = "off"
 debug = False  # Enable logging for debugging
 def debug_print(*args, **kwargs):
@@ -14,7 +14,7 @@ def debug_print(*args, **kwargs):
 def ap_setup(): 
     ap = network.WLAN(network.AP_IF)
     ap.config(hostname="alarm") # failed attempt at mDNS... no mDNS support in AP mode.
-    ap.config(ssid='PandaAlarm', security=0) # hire me crowdstrike I will make sure you have a worldwide BSOD incident again
+    ap.config(ssid='PandaAlarm', security=0, channel=11) # hire me crowdstrike
     ap.active(True) # open access point (no password) -> secure :)
     
     while not ap.isconnected():
